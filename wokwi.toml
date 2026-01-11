@@ -1,0 +1,16 @@
+# Wokwi simulation configuration for Bass Hole
+# https://wokwi.com/
+
+[wokwi]
+version = 1
+
+# Firmware location (after Arduino build)
+firmware = ".build/BassHole.ino.bin"
+elf = ".build/BassHole.ino.elf"
+
+# GDB debugging support
+gdb = true
+
+# Serial monitor
+serial = true
+baud = 115200

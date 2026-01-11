@@ -1,0 +1,259 @@
+# Hardware Guide
+
+This document covers the ESP32 CYD (Cheap Yellow Display) hardware, including pinouts, variants, and modifications.
+
+## What is a CYD?
+
+The "Cheap Yellow Display" is an inexpensive ESP32 development board with an integrated LCD touchscreen. They're manufactured by various companies (TZT, Sunton, etc.) and are popular for DIY projects due to their low cost (~$10-15).
+
+## Supported Hardware
+
+### Primary Target: 2.4" CYD
+
+| Specification | Value |
+|---------------|-------|
+| MCU | ESP32-WROOM-32 |
+| Display | 2.4" ILI9341 TFT LCD |
+| Resolution | 240 x 320 pixels |
+| Touch | XPT2046 resistive |
+| Storage | MicroSD card slot |
+| Flash | 4MB |
+| RAM | 520KB SRAM |
+
+**Common model names:**
+- TZT ESP32 LVGL 2.4" LCD
+- Sunton ESP32-2432S028
+- Generic "ESP32 CYD 2.4 inch"
+
+## Pinout Reference
+
+### Display (ILI9341) - HSPI
+
+| Function | GPIO | Notes |
+|----------|------|-------|
+| MOSI | 13 | Data to display |
+| MISO | 12 | Data from display (rarely used) |
+| SCLK | 14 | SPI clock |
+| CS | 15 | Chip select |
+| DC | 2 | Data/Command |
+| RST | -1 | Connected to EN (auto-reset) |
+| BL | 21 | Backlight (some boards) |
+
+### Touch (XPT2046) - Shared HSPI
+
+| Function | GPIO | Notes |
+|----------|------|-------|
+| CS | 33 | Touch chip select |
+| IRQ | 36 | Touch interrupt (optional) |
+
+### SD Card - VSPI
+
+| Function | GPIO | Notes |
+|----------|------|-------|
+| MOSI | 23 | |
+| MISO | 19 | |
+| SCK | 18 | |
+| CS | 5 | |
+
+### Other
+
+| Function | GPIO | Notes |
+|----------|------|-------|
+| LED | 4 or 16 | Varies by board (active LOW) |
+| LDR | 34 | Light sensor (some boards) |
+| Speaker | 26 | DAC output (some boards) |
+
+## Variant Differences
+
+### 2.4" vs 2.8" CYD
+
+| Feature | 2.4" | 2.8" |
+|---------|------|------|
+| Resolution | 240x320 | 320x480 |
+| Driver | ILI9341 | ILI9341 or ST7789 |
+| Touch | XPT2046 | XPT2046 |
+| Pins | Standard | May differ |
+
+To support 2.8", update `config.h`:
+```cpp
+#define SCREEN_WIDTH  320
+#define SCREEN_HEIGHT 480
+```
+
+And update `User_Setup.h` if using different driver.
+
+### ESP32-S3 Variants
+
+Some newer CYDs use ESP32-S3. Key differences:
+- Different pin numbering
+- USB-C instead of micro-USB
+- More RAM (useful for sprites)
+
+Check your board's documentation for exact pinout.
+
+## TFT_eSPI Configuration
+
+The `src/User_Setup.h` file configures TFT_eSPI for standard 2.4" CYD. Key settings:
+
+```cpp
+#define ILI9341_DRIVER       // Display driver
+#define TFT_WIDTH  240       // Pixels
+#define TFT_HEIGHT 320
+
+// SPI pins
+#define TFT_MISO  12
+#define TFT_MOSI  13
+#define TFT_SCLK  14
+#define TFT_CS    15
+#define TFT_DC    2
+#define TFT_RST   -1         // Connected to EN
+
+// Touch
+#define TOUCH_CS  33
+
+// Speed
+#define SPI_FREQUENCY 40000000  // 40 MHz
+```
+
+### Adjusting for Your Board
+
+If your display doesn't work:
+
+1. **White screen** - Wrong driver or SPI pins
+2. **Inverted colors** - Add `#define TFT_INVERSION_ON`
+3. **Mirrored display** - Try different rotation values
+4. **Garbled display** - Reduce `SPI_FREQUENCY` to `27000000`
+
+## Touch Calibration
+
+The XPT2046 touch controller returns raw ADC values that need mapping to screen coordinates.
+
+### Default Values (2.4" CYD)
+
+```cpp
+// In touch.cpp
+#define TOUCH_MIN_X  200
+#define TOUCH_MAX_X  3800
+#define TOUCH_MIN_Y  200
+#define TOUCH_MAX_Y  3800
+```
+
+### Calibration Process
+
+1. Enable debug output:
+   ```cpp
+   // In config.h
+   #define DEBUG_TOUCH 1
+   ```
+
+2. Upload and open Serial Monitor (115200 baud)
+
+3. Tap the **corners** of the screen:
+   - Top-left: Note X_min, Y_min
+   - Bottom-right: Note X_max, Y_max
+
+4. Update values in `touch.cpp`
+
+5. You may also need to swap X/Y or invert axes depending on screen orientation:
+   ```cpp
+   // In touchUpdate() - try these if touch is offset
+   int16_t mappedX = map(p.y, MIN, MAX, 0, WIDTH);  // Swap X/Y
+   int16_t mappedY = map(p.x, MAX, MIN, 0, HEIGHT); // Invert
+   ```
+
+## SD Card
+
+### Requirements
+- MicroSD card (any capacity)
+- FAT32 formatted
+- Class 10 recommended for speed
+
+### Folder Structure
+```
+/save/          # Game saves (created automatically)
+/sprites/       # Future: sprite assets
+/sounds/        # Future: audio files
+```
+
+### Troubleshooting
+
+**Card not detected:**
+- Reformat as FAT32 (not exFAT)
+- Try a different card
+- Check SD_CS pin matches your board
+- Some boards need the card inserted before power-on
+
+**Slow performance:**
+- Use Class 10 or faster card
+- Format with 32KB allocation unit size
+
+## Power Considerations
+
+### USB Power
+Most CYDs work fine powered by USB. Current draw is typically 100-200mA.
+
+### Battery Power
+For portable use:
+- 3.7V LiPo battery (500mAh+)
+- Connect to battery pins if available
+- Or use USB power bank
+
+**Note:** Some CYDs have battery charging circuits, some don't. Check your board.
+
+## Modifications
+
+### Adding a Speaker
+
+Many CYDs have pads for a speaker but no speaker installed.
+
+1. Get a small 8Ω speaker (≤1W)
+2. Solder to speaker pads
+3. Audio output is GPIO 26 (DAC)
+
+```cpp
+// Basic tone
+dacWrite(26, 128);  // Mid-level
+delay(1);
+dacWrite(26, 0);    // Silent
+```
+
+### External RGB LED
+
+The onboard LED is often single-color. For effects, add WS2812B:
+
+1. Connect data pin to any free GPIO
+2. Use FastLED or Adafruit NeoPixel library
+3. Good for hit feedback, alerts, etc.
+
+### Better Touch
+
+Resistive touch can be imprecise. Options:
+- Use larger tap targets in UI
+- Add debouncing/averaging
+- Upgrade to capacitive touch overlay (advanced)
+
+## Buying Guide
+
+### Recommended Sources
+- AliExpress (search "ESP32 CYD 2.4")
+- Amazon (higher price, faster shipping)
+- Banggood
+
+### What to Look For
+- ESP32-WROOM (not just ESP32-C3)
+- 2.4" or 2.8" based on your preference
+- ILI9341 driver (most common)
+- XPT2046 touch (standard)
+- SD card slot included
+
+### Price Range
+- 2.4" CYD: $8-15
+- 2.8" CYD: $12-20
+- ESP32-S3 variants: $15-25
+
+## Resources
+
+- [TFT_eSPI Documentation](https://github.com/Bodmer/TFT_eSPI)
+- [ESP32 Pinout Reference](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)
+- [CYD Community Discord](https://discord.gg/cyd) (unofficial)
+- [Wokwi ESP32 Simulator](https://wokwi.com/)

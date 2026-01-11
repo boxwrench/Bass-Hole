@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "author": "Bass Hole Project",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "ili9341",
+      "id": "lcd1",
+      "top": -200,
+      "left": 150,
+      "attrs": { "flipHorizontal": "1" }
+    },
+    {
+      "type": "xpt2046",
+      "id": "touch1",
+      "top": -200,
+      "left": 350,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    ["esp:TX0", "$serialMonitor:RX", "", []],
+    ["esp:RX0", "$serialMonitor:TX", "", []],
+
+    ["esp:D13", "lcd1:MOSI", "green", ["h0"]],
+    ["esp:D12", "lcd1:MISO", "blue", ["h0"]],
+    ["esp:D14", "lcd1:SCK", "yellow", ["h0"]],
+    ["esp:D15", "lcd1:CS", "orange", ["h0"]],
+    ["esp:D2", "lcd1:DC", "purple", ["h0"]],
+    ["esp:3V3", "lcd1:VCC", "red", ["h0"]],
+    ["esp:GND.1", "lcd1:GND", "black", ["h0"]],
+
+    ["esp:D13", "touch1:DIN", "green", ["h0"]],
+    ["esp:D12", "touch1:DO", "blue", ["h0"]],
+    ["esp:D14", "touch1:CLK", "yellow", ["h0"]],
+    ["esp:D33", "touch1:CS", "white", ["h0"]],
+    ["esp:D36", "touch1:IRQ", "gray", ["h0"]],
+    ["esp:3V3", "touch1:VCC", "red", ["h0"]],
+    ["esp:GND.1", "touch1:GND", "black", ["h0"]]
+  ],
+  "dependencies": {}
+}
