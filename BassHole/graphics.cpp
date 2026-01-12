@@ -13,6 +13,12 @@ static TFT_eSPI tft = TFT_eSPI();
 // static TFT_eSprite sprite = TFT_eSprite(&tft);
 
 void gfxInit() {
+    // Turn on backlight - try both common CYD pins
+    pinMode(21, OUTPUT);
+    digitalWrite(21, HIGH);
+    pinMode(27, OUTPUT);
+    digitalWrite(27, HIGH);
+
     tft.init();
     tft.setRotation(0);  // Portrait mode (240x320)
     tft.fillScreen(COLOR_BLACK);
