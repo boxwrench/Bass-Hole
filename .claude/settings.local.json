@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial project structure and Phase 1 game code\n\nProject foundation for Bass Hole - an Insaniquarium-style game for ESP32 CYD.\n\nSource code \\(src/\\):\n- BassHole.ino: Main game loop\n- config.h: Hardware pins, game constants\n- fish/food/coins: Entity systems\n- touch/graphics/sdcard: Hardware abstraction\n\nDocumentation \\(docs/\\):\n- ARCHITECTURE.md: Code structure explained\n- HARDWARE.md: CYD variants and pinouts\n- ADDING_FISH.md: Tutorial for contributors\n- ASSETS.md: Sprite creation guide\n\nTools:\n- img2code.py: Convert images to C arrays\n- dither_tool.py: 16-color palette dithering\n\nNot yet tested - next step is verifying compilation.\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

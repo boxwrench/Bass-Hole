@@ -73,6 +73,9 @@ void setup() {
     coinsInit();
     gameStateInit();
 
+    // Clear splash screen before starting game
+    gfxClear(COLOR_BLACK);
+
     // Start new game
     gameStateReset();
 

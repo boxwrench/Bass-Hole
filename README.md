@@ -113,7 +113,8 @@ Bass-Hole/
 ├── tools/                  # Asset conversion scripts
 ├── docs/                   # Documentation
 │   ├── ARCHITECTURE.md     # Code structure explained
-│   ├── HARDWARE.md         # CYD variants & pinouts
+│   ├── HARDWARE.md         # CYD basics & pinouts
+│   ├── CYD_VARIANTS.md     # Tested board configurations
 │   ├── ADDING_FISH.md      # Tutorial: add new fish species
 │   └── ASSETS.md           # Sprite creation guide
 ├── sdcard/                 # Files to copy to SD card
@@ -129,7 +130,8 @@ Bass-Hole/
 |----------|-------------|
 | [SETUP.md](SETUP.md) | Detailed installation & troubleshooting |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the code is organized |
-| [docs/HARDWARE.md](docs/HARDWARE.md) | CYD variants, pinouts, mods |
+| [docs/HARDWARE.md](docs/HARDWARE.md) | CYD basics, pinouts, mods |
+| [docs/CYD_VARIANTS.md](docs/CYD_VARIANTS.md) | **Tested board configs** - check here first! |
 | [docs/ADDING_FISH.md](docs/ADDING_FISH.md) | Tutorial: Add a new fish species |
 | [docs/ASSETS.md](docs/ASSETS.md) | Creating & converting sprites |
 | [DEVELOPMENT_STRATEGY.md](DEVELOPMENT_STRATEGY.md) | Full game design document |

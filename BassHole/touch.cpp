@@ -2,8 +2,9 @@
 #include <XPT2046_Touchscreen.h>
 #include <SPI.h>
 
-// Touch controller
-static XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
+// Touch controller shares SPI with display
+// TFT_eSPI handles bus sharing via SUPPORT_TRANSACTIONS
+static XPT2046_Touchscreen touch(TOUCH_CS);
 
 // Touch state
 static TouchPoint currentTouch;
@@ -20,6 +21,8 @@ static unsigned long lastTouchTime = 0;
 #define TOUCH_MAX_Y  3800
 
 void touchInit() {
+    // Touch shares SPI bus with display
+    // SUPPORT_TRANSACTIONS in TFT_eSPI handles the switching
     touch.begin();
     touch.setRotation(0);  // Match display rotation
 
@@ -36,13 +39,14 @@ void touchInit() {
 void touchUpdate() {
     tapOccurred = false;
 
+    // Check if screen is touched
     bool touched = touch.touched();
 
     if (touched) {
         TS_Point p = touch.getPoint();
 
-        // Check minimum pressure
-        if (p.z < TOUCH_MIN_PRESSURE) {
+        // Filter out noise - check pressure is in valid range
+        if (p.z < TOUCH_MIN_PRESSURE || p.z > 3000) {
             touched = false;
         } else {
             // Map raw coordinates to screen coordinates

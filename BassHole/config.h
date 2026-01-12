@@ -90,8 +90,8 @@
 #define COIN_VALUE_LARGE  5       // Large fish coin drop
 
 // Touch settings
-#define TOUCH_DEBOUNCE_MS 50      // Minimum ms between touch events
-#define TOUCH_MIN_PRESSURE 200    // Minimum pressure to register touch
+#define TOUCH_DEBOUNCE_MS 100     // Minimum ms between touch events
+#define TOUCH_MIN_PRESSURE 400    // Minimum pressure to register touch (increase if phantom touches)
 
 // ============================================================================
 // FISH SPECIES DATA
@@ -139,7 +139,7 @@ enum GameState {
 
 #define DEBUG_SERIAL      1       // Enable serial debug output
 #define DEBUG_FPS         1       // Show FPS counter
-#define DEBUG_TOUCH       0       // Show touch coordinates
+#define DEBUG_TOUCH       1       // Show touch coordinates
 #define DEBUG_FISH        0       // Show fish state info
 
 #endif // CONFIG_H

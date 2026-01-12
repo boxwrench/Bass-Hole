@@ -20,8 +20,11 @@ void gfxInit() {
     digitalWrite(27, HIGH);
 
     tft.init();
-    tft.setRotation(0);  // Portrait mode (240x320)
-    tft.fillScreen(COLOR_BLACK);
+    tft.setRotation(0);  // Try 0, 1, 2, 3 for correct orientation
+    tft.invertDisplay(false);  // Try true if colors inverted
+
+    // Clear screen
+    tft.fillScreen(TFT_BLACK);
 
 #if DEBUG_SERIAL
     Serial.println("Display initialized");
