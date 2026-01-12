@@ -12,16 +12,18 @@ This file tracks working configurations for different ESP32 CYD (Cheap Yellow Di
 
 ## Tested Configurations
 
-### Variant 1: TZT ESP32 2.4" CYD (2432S028)
+### Variant 1: TZT ESP32 LVGL 2.4" CYD
 
 | Property | Value |
 |----------|-------|
-| **Seller** | TZT Official Store (AliExpress) |
-| **Model** | ESP32-2432S028 |
+| **Purchase** | AliExpress - TZT Official Store |
+| **Listing Name** | TZT ESP32 LVGL WIFI&Bluetooth Development Board 2.4 inch LCD TFT Module 240*320 Smart Display Screen With Touch WROOM |
 | **Display** | 2.4" ILI9341 240x320 |
 | **Touch** | XPT2046 resistive |
+| **Chip** | ESP32-WROOM |
+| **Features** | WiFi, Bluetooth, SD card slot, voltage regulator |
 | **Tested By** | @boxwrench |
-| **Status** | In progress |
+| **Status** | In progress - debugging display settings |
 
 **TFT_eSPI User_Setup.h:**
 ```cpp
