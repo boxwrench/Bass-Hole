@@ -34,13 +34,13 @@ Tools → Manage Libraries → Install:
    - Windows: `C:\Users\<YOU>\Documents\Arduino\libraries\TFT_eSPI\`
    - Mac: `~/Documents/Arduino/libraries/TFT_eSPI/`
 2. Backup the existing `User_Setup.h`
-3. Copy `src/User_Setup.h` from this project to that folder
+3. Copy `BassHole/User_Setup.h` from this project to that folder
 
 **Option B: Use User_Setup_Select.h**
 
 1. In `TFT_eSPI/User_Setup_Select.h`, comment out the default include
 2. Add: `#include <User_Setups/Setup_CYD_2.4.h>`
-3. Copy `src/User_Setup.h` to `TFT_eSPI/User_Setups/Setup_CYD_2.4.h`
+3. Copy `BassHole/User_Setup.h` to `TFT_eSPI/User_Setups/Setup_CYD_2.4.h`
 
 ### 4. Select Board Settings
 
@@ -58,7 +58,7 @@ In Arduino IDE → Tools:
 
 ## Building & Uploading
 
-1. Open `src/BassHole.ino` in Arduino IDE
+1. Open `BassHole/BassHole.ino` in Arduino IDE
 2. Click Verify (checkmark) to compile
 3. Click Upload (arrow) to flash to device
 
@@ -97,14 +97,14 @@ If touch input seems off (taps don't register where you tap):
 - Try a different SD card
 
 **Build errors about missing files:**
-- Make sure all .cpp and .h files are in the `src/` folder
+- Make sure all .cpp and .h files are in the `BassHole/` folder
 - Arduino IDE should auto-detect them when opening BassHole.ino
 
 ## Project Structure
 
 ```
 Bass-Hole/
-├── src/
+├── BassHole/             # Arduino sketch folder
 │   ├── BassHole.ino      # Main sketch
 │   ├── config.h          # Hardware & game constants
 │   ├── game_state.h/cpp  # Game state machine

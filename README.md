@@ -75,7 +75,7 @@ cd Bass-Hole
 
 ### 3. Configure TFT_eSPI
 
-Copy `src/User_Setup.h` to your TFT_eSPI library folder:
+Copy `BassHole/User_Setup.h` to your TFT_eSPI library folder:
 - Windows: `Documents\Arduino\libraries\TFT_eSPI\`
 - Mac/Linux: `~/Arduino/libraries/TFT_eSPI/`
 
@@ -83,7 +83,7 @@ This configures the correct pins for the CYD 2.4" display.
 
 ### 4. Upload
 
-1. Open `src/BassHole.ino` in Arduino IDE
+1. Open `BassHole/BassHole.ino` in Arduino IDE
 2. Select **Board:** "ESP32 Dev Module"
 3. Select your COM port
 4. Click Upload
@@ -98,7 +98,7 @@ This configures the correct pins for the CYD 2.4" display.
 
 ```
 Bass-Hole/
-├── src/                    # Source code
+├── BassHole/               # Arduino sketch folder
 │   ├── BassHole.ino        # Main entry point
 │   ├── config.h            # Hardware pins & game constants
 │   ├── game_state.h/cpp    # State machine, save/load
