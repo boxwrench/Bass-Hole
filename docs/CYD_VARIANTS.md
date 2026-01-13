@@ -66,10 +66,26 @@ void setup() {
 // Use both CS and IRQ pins in constructor
 static XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
 
+// Universal calibration values for TZT CYD 2.4"
+#define TOUCH_MIN_X  600
+#define TOUCH_MAX_X  3600
+#define TOUCH_MIN_Y  500
+#define TOUCH_MAX_Y  3600
+
 void touchInit() {
     pinMode(TOUCH_IRQ, INPUT_PULLUP);
-    touch.begin(); // Let library handle defaults
+    pinMode(TOUCH_CS, OUTPUT);
+    digitalWrite(TOUCH_CS, HIGH);
+
+    touch.begin(); // Let library initialize SPI
     touch.setRotation(3);
+}
+
+void touchUpdate() {
+    // ... in the coordinate mapping section:
+    int16_t mappedX = map(p.x, TOUCH_MIN_X, TOUCH_MAX_X, 0, SCREEN_WIDTH);
+    // Y-axis is inverted: high raw Y = top, low raw Y = bottom
+    int16_t mappedY = map(p.y, TOUCH_MAX_Y, TOUCH_MIN_Y, 0, SCREEN_HEIGHT);
 }
 ```
 
@@ -86,8 +102,9 @@ void gfxInit() {
 ```
 
 **Notes:**
-- **Initialization Order**: `touchInit()` MUST come before `gfxInit()`. If the display initializes first, the SPI bus state can prevent the touch controller from starting correctly.
+- **Touch Calibration**: Y-axis is inverted on this hardware. Raw Y values of ~3600 correspond to the top of the screen (Y=0), and raw Y values of ~500 correspond to the bottom (Y=320).
 - **IRQ Pin**: Using the IRQ pin (GPIO 36) in the constructor and for polling is significantly more stable than SPI polling alone.
+- **SPI Initialization**: Let the XPT2046 library handle SPI initialization with `touch.begin()` instead of passing the SPI object explicitly.
 - **Colors**: Requires `TFT_BGR` and `tft.invertDisplay(true)`.
 
 ---
@@ -172,9 +189,11 @@ Look for:
 
 **Touch coordinates wrong:**
 1. Enable DEBUG_TOUCH to see raw values
-2. Tap corners, note raw X/Y ranges
-3. Update TOUCH_MIN/MAX values
-4. May need to swap X↔Y or invert axes
+2. Tap all four corners and center, note raw X/Y ranges
+3. Update TOUCH_MIN/MAX values based on observed range
+4. If touches are inverted (tap top → registers bottom):
+   - Swap the parameters: `map(p.y, TOUCH_MAX_Y, TOUCH_MIN_Y, 0, SCREEN_HEIGHT)`
+5. May need to swap X↔Y axes depending on rotation
 
 ### Step 4: SD Card Not Working
 

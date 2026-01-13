@@ -13,12 +13,13 @@ static bool wasTouched = false;
 static bool tapOccurred = false;
 static unsigned long lastTouchTime = 0;
 
-// Calibration values (adjust for your specific screen)
-// These map raw touch coordinates to screen coordinates
-#define TOUCH_MIN_X  200
-#define TOUCH_MAX_X  3800
-#define TOUCH_MIN_Y  200
-#define TOUCH_MAX_Y  3800
+// Calibration values for ESP32 CYD 2.4" (universal calibration)
+// Based on testing: X range 594-3577, Y range 498-3602
+// NOTE: Y axis is inverted on this hardware
+#define TOUCH_MIN_X  600
+#define TOUCH_MAX_X  3600
+#define TOUCH_MIN_Y  500
+#define TOUCH_MAX_Y  3600
 
 void touchInit() {
 #if DEBUG_SERIAL
@@ -109,7 +110,8 @@ void touchUpdate() {
     if (pressureOk) {
         // Map raw coordinates to screen
         int16_t mappedX = map(p.x, TOUCH_MIN_X, TOUCH_MAX_X, 0, SCREEN_WIDTH);
-        int16_t mappedY = map(p.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 0, SCREEN_HEIGHT);
+        // Y-axis is inverted: high raw Y = top of screen (0), low raw Y = bottom (SCREEN_HEIGHT)
+        int16_t mappedY = map(p.y, TOUCH_MAX_Y, TOUCH_MIN_Y, 0, SCREEN_HEIGHT);
 
         // Clamp to screen
         mappedX = constrain(mappedX, 0, SCREEN_WIDTH - 1);

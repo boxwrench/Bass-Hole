@@ -62,3 +62,11 @@ All notable changes to Bass Hole will be documented in this file.
 - Added BGR color order support
 - Debugging display rotation and touch input
 - Created CYD_VARIANTS.md for community hardware testing
+
+### 0.1.2 - Touch Calibration Fix
+- Fixed XPT2046 touch controller returning -4096 error values
+- Added universal touch calibration for ESP32 CYD 2.4" (TZT variant)
+- Fixed Y-axis inversion (touches now map correctly to screen coordinates)
+- Calibration values: X: 600-3600, Y: 500-3600 (inverted)
+- Touch input now accurate across all screen areas
+- Updated CYD_VARIANTS.md with verified calibration data
