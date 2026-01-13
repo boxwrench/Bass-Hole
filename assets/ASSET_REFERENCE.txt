@@ -1,0 +1,60 @@
+FISH (16-color dithered realism)
+- r_trout
+- bluegill
+- smallmouth
+- channel_cat
+- kokanee
+- l_bass
+- steelhead
+- striped_bass
+- pikeminnow
+- sturgeon
+
+CHARACTERS (Vibrant Cartoon)
+- ty_knotts_neutral
+- ty_knotts_angry
+- ty_knotts_smug
+- ty_knotts_facepalm
+- ty_knotts_pointing
+
+BOSSES (Vibrant Cartoon)
+- cyberstuck_idle
+- cyberstuck_attack
+- catgpt_idle
+- catgpt_attack
+- antropic_idle
+- antropic_attack
+- gaagle_idle
+- gaagle_attack
+
+ENEMIES (Vibrant Cartoon)
+- clanker_idle
+- clanker_fishing
+- cogsucker_idle
+- cogsucker_attack
+
+UI (Pixel Art)
+- coin_gold
+- coin_silver
+- pellet
+- button_buy
+- button_upgrade
+- heart_full
+- heart_empty
+
+BACKGROUNDS (Realism)
+- bg_sierra
+- bg_river
+- bg_delta
+
+EFFECTS (Pixel Art)
+- bubble_sm
+- bubble_med
+- splash
+- sparkle
+- explosion
+
+SCENES
+- title_screen
+- title_screen_fit
+- title_screen_fill

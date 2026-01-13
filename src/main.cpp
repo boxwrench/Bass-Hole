@@ -13,6 +13,7 @@
  * - Don't let fish starve!
  */
 
+#include <Arduino.h>
 #include "config.h"
 #include "game_state.h"
 #include "fish.h"
@@ -209,9 +210,26 @@ void handlePlayingInput(TouchPoint tap) {
         }
     }
 
-    // Check if tap is in bottom UI area (shop button area - future)
+    // Check if tap is in bottom UI area (shop button area)
     if (tap.y > TANK_BOTTOM) {
-        // TODO: Open shop when implemented
+        int16_t btnWidth = 100;
+        int16_t btnHeight = 30;
+        int16_t btnX = (SCREEN_WIDTH - btnWidth) / 2;
+        int16_t btnY = TANK_BOTTOM + 5;
+
+        if (tap.x >= btnX && tap.x <= btnX + btnWidth &&
+            tap.y >= btnY && tap.y <= btnY + btnHeight) {
+            
+            if (game.coins >= FISH_COST_BASIC) {
+                game.coins -= FISH_COST_BASIC;
+                // Spawn a new fish at the top center of the tank
+                fishSpawn(FISH_RAINBOW_TROUT, SCREEN_WIDTH / 2, TANK_TOP + 20);
+#if DEBUG_SERIAL
+                Serial.print("Bought fish! Remaining coins: $");
+                Serial.println(game.coins);
+#endif
+            }
+        }
     }
 }
 

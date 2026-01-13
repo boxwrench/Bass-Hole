@@ -151,7 +151,7 @@ See the detailed tutorial: [docs/ADDING_FISH.md](docs/ADDING_FISH.md)
 2. Implement behavior in `enemies.cpp`
 3. Add rendering in `graphics.cpp`
 4. Update game loop to spawn/update enemies
-5. Document the enemy in `DEVELOPMENT_STRATEGY.md`
+5. **Document the enemy** in `DEVELOPMENT_STRATEGY.md`
 
 ### New Game States
 1. Add state to `GameState` enum in `config.h`

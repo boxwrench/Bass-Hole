@@ -7,6 +7,7 @@ All notable changes to Bass Hole will be documented in this file.
 ### Phase 1: Core Gameplay - In Progress
 
 #### Added
+
 - Project structure and documentation
 - Core game loop (fish, food, coins)
 - Fish AI with hunger, growth, coin drops
@@ -15,8 +16,12 @@ All notable changes to Bass Hole will be documented in this file.
 - TFT_eSPI display integration
 - CYD variant documentation for community contributions
 - Python tools for sprite conversion (img2code.py, dither_tool.py)
+- "Buy Fish" logic and footer UI button (Phase 1 completion)
+- Asset organization for 90+ generated images
+- Title screen image to README.md
 
 #### Hardware Testing
+
 - TZT ESP32 LVGL 2.4" CYD (AliExpress)
   - Display: Working (debugging rotation/colors)
   - Touch: Working (debugging phantom touches)
@@ -26,17 +31,20 @@ All notable changes to Bass Hole will be documented in this file.
 ### Planned Features
 
 #### Phase 2: Art & Character
+
 - [ ] 16-color dithered fish sprites
 - [ ] Ty Knotts narrator with dialogue system
 - [ ] Tank background art
 - [ ] UI sprite elements
 
 #### Phase 3: Enemies
+
 - [ ] Clanker enemy type
 - [ ] Cogsucker enemy type
 - [ ] Tap-to-defeat mechanic
 
 #### Phase 4: Bosses
+
 - [ ] Boss battle framework
 - [ ] Cyberstuck (tap rapidly when stuck)
 - [ ] CatGPT (Simon-says pattern)
@@ -44,6 +52,7 @@ All notable changes to Bass Hole will be documented in this file.
 - [ ] Gaagle (whack-a-mole)
 
 #### Phase 5: Polish
+
 - [ ] Particle effects
 - [ ] Sound effects (ESP32 DAC)
 - [ ] Achievement system
@@ -54,19 +63,34 @@ All notable changes to Bass Hole will be documented in this file.
 ## Version History
 
 ### 0.1.0 - Initial Development
+
 - Initial commit with project structure
 - Phase 1 gameplay code (unverified on hardware)
 
 ### 0.1.1 - Hardware Debugging
+
 - Added backlight control for CYD variants
 - Added BGR color order support
 - Debugging display rotation and touch input
 - Created CYD_VARIANTS.md for community hardware testing
 
 ### 0.1.2 - Touch Calibration Fix
+
 - Fixed XPT2046 touch controller returning -4096 error values
 - Added universal touch calibration for ESP32 CYD 2.4" (TZT variant)
 - Fixed Y-axis inversion (touches now map correctly to screen coordinates)
 - Calibration values: X: 600-3600, Y: 500-3600 (inverted)
 - Touch input now accurate across all screen areas
-- Updated CYD_VARIANTS.md with verified calibration data
+### 0.1.3 - Phase 1 Finalization
+
+- Implemented "Buy Fish" button in the footer
+- Organized all image assets (90+ files) into correct subdirectories
+- Updated README.md with the title screen asset
+- Verified gameplay loop logic (Coins -> Buy -> Spawn)
+
+### 0.2.0 - PlatformIO Migration
+
+- Migrated project structure to standard PlatformIO layout (`src/` and `include/`)
+- Renamed `BassHole.ino` to `src/main.cpp`
+- Updated `platformio.ini` for automated dependency management
+- Removed legacy Arduino IDE instructions

@@ -5,6 +5,7 @@
 #include "game_state.h"
 #include <TFT_eSPI.h>
 #include <math.h>
+#include <string.h>
 
 // TFT display instance
 static TFT_eSPI tft = TFT_eSPI();
@@ -20,26 +21,37 @@ void gfxInit() {
     digitalWrite(27, HIGH);
 
     tft.init();
-    
-    // Aggressive clear: The ILI9341 has 320x240 native memory.
-    // Clear it in landscape orientation first to ensure we hit all pixels.
-    tft.setRotation(1); 
-    tft.fillScreen(TFT_BLACK);
-    
-    tft.setRotation(3);  // Return to Portrait, USB at bottom
-    tft.invertDisplay(true);  // Required for correct colors on this CYD
 
-    // Clear entire visible area again
-    tft.fillScreen(TFT_BLACK);
+    // Portrait mode with USB at bottom
+    // Rotation 0 should give portrait with USB at bottom (180° from rotation 2)
+    tft.setRotation(0);
+    tft.invertDisplay(true);  // Required for correct colors
+
+    // Aggressive clear in ALL rotations to remove ghost images
+    for (int r = 0; r < 4; r++) {
+        tft.setRotation(r);
+        tft.fillScreen(TFT_BLACK);
+    }
+
+    // Set final rotation
+    tft.setRotation(0);
 
 #if DEBUG_SERIAL
+    Serial.println("=== DISPLAY INIT v2025.01.13.A ===");  // Unique identifier for THIS version
     Serial.println("Display initialized");
     Serial.print("Rotation: ");
     Serial.println(tft.getRotation());
-    Serial.print("Internal Width: ");
+    Serial.print("Width: ");
     Serial.print(tft.width());
-    Serial.print(" Internal Height: ");
+    Serial.print(" Height: ");
     Serial.println(tft.height());
+    Serial.print("TANK_BOTTOM: ");
+    Serial.println(TANK_BOTTOM);
+    Serial.print("Footer starts at Y: ");
+    Serial.println(TANK_BOTTOM);
+    Serial.print("Screen ends at Y: ");
+    Serial.println(SCREEN_HEIGHT);
+    Serial.println("Ghost clear: 4 rotations");
 #endif
 }
 
@@ -193,20 +205,55 @@ void gfxDrawUI() {
     tft.print("Fish:");
     tft.print(fishGetCount());
 
-    // Bottom bar - black background
-    tft.fillRect(0, TANK_BOTTOM, SCREEN_WIDTH, SCREEN_HEIGHT - TANK_BOTTOM, COLOR_BLACK);
+    // Bottom bar - bright color to verify it renders
+    tft.fillRect(0, TANK_BOTTOM, SCREEN_WIDTH, SCREEN_HEIGHT - TANK_BOTTOM, COLOR_UI_GREEN);
 
-    // Level display
-    tft.setTextColor(COLOR_TEXT);
+    // DEBUG: Simple text using same approach as header (which works)
+    tft.setTextColor(COLOR_BLACK);  // Black on green
+    tft.setTextSize(2);
+    tft.setCursor(10, TANK_BOTTOM + 10);
+    tft.print("FOOTER TEST");
+
+    // BUTTON CODE TEMPORARILY DISABLED FOR DEBUGGING
+    /*
+    // Buy Fish Button - centered, highly visible
+    int16_t btnWidth = 100;
+    int16_t btnHeight = 30;
+    int16_t btnX = (SCREEN_WIDTH - btnWidth) / 2;
+    int16_t btnY = TANK_BOTTOM + 5;
+
+    // Button background - bright green when affordable, dark when not
+    uint16_t btnColor = game.coins >= FISH_COST_BASIC ? COLOR_UI_GREEN : tft.color565(80, 80, 80);
+    tft.fillRect(btnX, btnY, btnWidth, btnHeight, btnColor);
+    tft.drawRect(btnX, btnY, btnWidth, btnHeight, COLOR_COIN_GOLD);
+
+    // Button text - FIXED: Use opaque text rendering without background parameter
+    // This works better with inverted displays
+    uint16_t textColor = game.coins >= FISH_COST_BASIC ? COLOR_BLACK : COLOR_WHITE;
+
+    // Draw a small background rect for the text first (ensures proper contrast)
+    tft.fillRect(btnX + 2, btnY + 2, btnWidth - 4, btnHeight - 4, btnColor);
+
+    // Now draw text with single-parameter setTextColor (no background)
+    tft.setTextColor(textColor);
+    tft.setTextSize(2);
+
+    // Format complete string first, then print once
+    char btnText[16];
+    snprintf(btnText, sizeof(btnText), "BUY $%d", FISH_COST_BASIC);
+
+    // Center the text (7 chars * 12px/char at size 2 = 84px)
+    int16_t textWidth = strlen(btnText) * 12;
+    tft.setCursor(btnX + (btnWidth - textWidth) / 2, btnY + 7);
+    tft.print(btnText);
+
+    // High score - right side, explicit background
+    tft.setTextColor(COLOR_TEXT, COLOR_WATER_DEEP);
     tft.setTextSize(1);
-    tft.setCursor(5, TANK_BOTTOM + 15);
-    tft.print("Level ");
-    tft.print(game.currentLevel);
-
-    // High score
-    tft.setCursor(SCREEN_WIDTH - 80, TANK_BOTTOM + 15);
-    tft.print("Best: $");
+    tft.setCursor(SCREEN_WIDTH - 45, TANK_BOTTOM + 5);
+    tft.print("Hi:");
     tft.print(game.highScore);
+    */
 }
 
 void gfxDrawFPS(uint16_t fps) {

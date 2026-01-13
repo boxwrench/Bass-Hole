@@ -66,10 +66,12 @@ In Arduino IDE → Tools:
 
 Format your SD card as FAT32, then create this folder structure:
 
-```
+```text
 /save/          (game saves go here - created automatically)
 /sprites/       (future: sprite assets)
 ```
+
+## Setup complete!
 
 ## Touch Calibration
 
@@ -102,7 +104,7 @@ If touch input seems off (taps don't register where you tap):
 
 ## Project Structure
 
-```
+```text
 Bass-Hole/
 ├── BassHole/             # Arduino sketch folder
 │   ├── BassHole.ino      # Main sketch

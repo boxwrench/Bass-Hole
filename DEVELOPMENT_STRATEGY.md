@@ -6,22 +6,25 @@
 **Tagline:** "Knot Your Average Fishing Game"
 
 **Narrator/Guide:** Ty Knotts
+
 - Species: Largemouth Bass (Micropterus salmoides)
 - Personality: Terse, rude, impatient fishing veteran
 - Role: Tutorial guide, between-level commentary, achievement roasts
 - Voice: Think Ron Swanson meets a grumpy fishing guide
 - Visual Style: Comic/cartoon with exaggerated expressions
 - Sample dialogue:
-  - "You call that feeding? My grandma casts better."
-  - "Another guppy? We running a charity here?"
-  - "Congrats. You didn't screw up for once."
-  - "Clanker got your fish. You just gonna watch?"
+
+- "You call that feeding? My grandma casts better."
+- "Another guppy? We running a charity here?"
+- "Congrats. You didn't screw up for once."
+- "Clanker got your fish. You just gonna watch?"
 
 ---
 
 ## Core Gameplay (Insaniquarium Clone)
 
 ### Phase 1: Fish Management
+
 - Tap to drop fish food pellets
 - Fish eat → grow → drop coins
 - Tap coins to collect
@@ -29,7 +32,9 @@
 - Buy upgrades (better food, auto-feeders, etc.)
 
 ### Phase 2: Threats - AI Fishermen
+
 **Enemy Types:**
+
 - **Clankers:** Robotic fishermen (low threat, slow)
 - **Cogsuckers:** More aggressive AI bots (faster, steal multiple fish)
 - Tap enemies to shoot/scare them away
@@ -38,23 +43,27 @@
 
 ### Phase 3: Boss Battles (AI Meme Parodies)
 
-**Boss 1: Cyberstuck**
+#### **Boss 1: Cyberstuck**
+
 - Parody of Cybertruck/Elon memes
 - Glitchy angular robot that gets "stuck" in animations
 - Attacks: Drops broken promises, overpromises catching all fish
 
-**Boss 2: CatGPT**
+#### **Boss 2: CatGPT**
+
 - AI cat that "hallucinates" fake fish
 - Attacks: Confuses your fish, generates phantom threats
 - Occasionally gives helpful but wrong advice
 
-**Boss 3: Ant-tropic**
+#### **Boss 3: Ant-tropic**
+
 - Parody of Claude/Anthropic
 - Overly polite AI that "refuses" to steal fish for "safety reasons"
 - Then does it anyway with long explanations
 - Attacks: Constitutional decision-making delays, then sudden strikes
 
-**Boss 4: Gaagle**
+#### **Boss 4: Gaagle**
+
 - Search engine turned evil
 - Attacks: Ad-based distractions, sponsored fish kidnapping
 - "Did you mean: bass whole?"
@@ -62,6 +71,7 @@
 **Boss Design:** Comic/cartoon style, exaggerated features, animated personality
 
 ### Phase 4: Progression
+
 - Unlock new NorCal fish species
 - Each species has unique behaviors/coin values
 - Prestige system: "Release and restock"
@@ -71,28 +81,33 @@
 ## NorCal Fish Species (Unlockable)
 
 **Starter Fish:**
+
 1. Rainbow Trout - Basic, reliable
 2. Bluegill - Fast breeders, low value
 
 **Mid-tier:**
-3. Smallmouth Bass - Medium value
-4. Channel Catfish - Slow, high value
-5. Kokanee Salmon - Seasonal bonuses
+
+1. Smallmouth Bass - Medium value
+2. Channel Catfish - Slow, high value
+3. Kokanee Salmon - Seasonal bonuses
 
 **Premium:**
-6. Largemouth Bass (Ty's species) - Highest base value, rare
-7. Steelhead Trout - Speed + value hybrid
-8. Striped Bass - Tank fish, scares small Clankers
+
+1. Largemouth Bass (Ty's species) - Highest base value, rare
+2. Steelhead Trout - Speed + value hybrid
+3. Striped Bass - Tank fish, scares small Clankers
 
 **Special/Easter Eggs:**
-9. Sacramento Pikeminnow (invasive) - Negative value, must remove
-10. Sturgeon - Ultra rare, massive coin drops
+
+1. Sacramento Pikeminnow (invasive) - Negative value, must remove
+2. Sturgeon - Ultra rare, massive coin drops
 
 ---
 
 ## Visual Style
 
 ### **Fish & Environment:** 16-Color Dithered Realism
+
 - Fish sprites based on real NorCal species photos
 - Dithered to 16-color palette for retro aesthetic
 - Tank backgrounds: Dithered Sierra Nevada underwater scenes
@@ -100,6 +115,7 @@
 - CRT scanline effects optional
 
 ### **Characters (Ty & Bosses):** Comic/Cartoon
+
 - Ty Knotts: Exaggerated cartoon bass with attitude
 - Speech bubbles for sass
 - Expressive animations (eye rolls, smirks, facepalms)
@@ -107,6 +123,7 @@
 - Vibrant colors, bold outlines
 
 ### **UI Elements:** Mixed
+
 - Coins, food pellets: Simple pixel art
 - Buttons: Clean, readable
 - Text: Retro terminal font for Ty's dialogue
@@ -114,7 +131,8 @@
 ---
 
 ## Repository Structure
-```
+
+```text
 bass-hole-cyd/
 ├── src/
 │   ├── main.ino
@@ -152,41 +170,39 @@ bass-hole-cyd/
 
 ## Development Phases (No Pressure!)
 
-### **Phase 1: Proof of Concept**
+### **Phase 1: Proof of Concept [COMPLETE]**
+
 **Goals:**
-- Basic fish + food + coins loop working
-- Ty Knotts appears with 3 tutorial lines
-- Single fish type (Rainbow Trout)
-- Touch input validated on Wokwi
 
-**Claude Code tasks:**
-```bash
-claude-code "set up TFT_eSPI with touch input for CYD"
-claude-code "implement basic fish AI: eat food, drop coins"
-claude-code "add Ty Knotts dialogue system with text box"
-```
+- [x] Basic fish + food + coins loop working
+- [x] Basic Ty Knotts tutorial foundation
+- [x] Single fish type (Rainbow Trout)
+- [x] Hardware verified on TZT CYD 2.4"
+- [x] Save/load game state to SD card
 
-### **Phase 2: Art Assets**
-**Google AI Generation:**
+### **Phase 2: Art Assets [IN PROGRESS]**
 
-**Fish (16-color dithered realism):**
-- Rainbow Trout sprite (realistic photo reference)
-- Bluegill sprite
-- Tank background (Sierra Nevada underwater)
+**Goals:**
 
-**Characters (cartoon):**
-- Ty Knotts character sheet (neutral, angry, smug expressions)
-- Clanker enemy design
-- UI elements (coins, food pellets, buttons)
+- Generate initial 16-color palette
+- Generate Ty Knotts character sheet (neutral, angry, smug expressions)
+- Generate Rainbow Trout sprite (dithered)
+- Generate Bluegill sprite (dithered)
+- Generate Tank background (dithered Sierra Nevada underwater)
+- Generate Clanker enemy design
+- Generate UI elements (coins, food pellets, buttons)
 
 **Process:**
+
 1. Generate in Google AI Studio
-2. Run through dithering tool → 16 colors
+2. Run through dithering tool → 16 colors (for fish/environment)
 3. Convert to C arrays
 4. Integrate into game
 
 ### **Phase 3: Core Loop**
+
 **Goals:**
+
 - 3 fish species unlockable
 - Shop system (buy fish, upgrades)
 - Clankers appear and steal fish
@@ -194,7 +210,9 @@ claude-code "add Ty Knotts dialogue system with text box"
 - Save/load game state (EEPROM)
 
 ### **Phase 4: Boss Battle System**
+
 **Goals:**
+
 - Boss encounter framework
 - First boss: Cyberstuck
 - Boss intro dialogue
@@ -202,7 +220,9 @@ claude-code "add Ty Knotts dialogue system with text box"
 - Victory rewards
 
 ### **Phase 5: Content Expansion**
+
 **Goals:**
+
 - All 4 bosses implemented
 - Full fish species roster
 - Cogsuckers (advanced enemies)
@@ -210,7 +230,9 @@ claude-code "add Ty Knotts dialogue system with text box"
 - Achievement system with roasts
 
 ### **Phase 6: Polish**
+
 **Goals:**
+
 - Particle effects (bubbles, coin sparkles, dithered explosions)
 - Sound effects (ESP32 buzzer - 8-bit style)
 - Screen shake on attacks
@@ -218,7 +240,9 @@ claude-code "add Ty Knotts dialogue system with text box"
 - Ty's contextual commentary
 
 ### **Phase 7: Release**
+
 **Goals:**
+
 - Wokwi demo link
 - Flash .bin file for CYD
 - Video showcase (boss fights, Ty sass)
@@ -230,30 +254,36 @@ claude-code "add Ty Knotts dialogue system with text box"
 
 ## Ty Knotts Dialogue Categories
 
-### **Tutorial:**
+### **Tutorial**
+
 - "Tap the screen. Drop food. It's not rocket surgery."
 - "Fish eat. Fish poop coins. You collect. Got it?"
 - "See that Clanker? Tap it before it steals your fish. Do I gotta do everything?"
 
-### **Achievements:**
+### **Achievements**
+
 - "10 fish alive? Don't get cocky."
 - "First Clanker kill. Took you long enough."
 - "Beat Cyberstuck. Even a broken clock's right twice a day."
 
-### **Failures:**
+### **Failures**
+
 - "And there goes your best fish. Nice job, genius."
 - "Out of coins already? What are you, a tourist?"
 - "Cogsuckers ate three fish while you were napping."
 
-### **Idle/Waiting:**
+### **Idle/Waiting**
+
 - "You gonna do something or just stare?"
 - "Fish don't feed themselves, pal."
 
-### **Milestones:**
+### **Milestones**
+
 - "Level 5. You're less terrible than I thought."
 - "Unlocked Largemouth Bass. That's MY family. Don't screw this up."
 
-### **Boss Encounters:**
+### **Boss Encounters**
+
 - "Oh great, Cyberstuck's here. This oughta be good."
 - "CatGPT thinks it's so smart. Show it what real intelligence looks like."
 - "Ant-tropic's being 'helpful' again. Watch your back."
@@ -264,6 +294,7 @@ claude-code "add Ty Knotts dialogue system with text box"
 ## Boss Battle Mechanics
 
 ### **Cyberstuck**
+
 - **Appearance:** Angular robot truck, glitchy animations
 - **Attack Pattern:** 
   - Charges forward, gets stuck mid-screen
@@ -273,6 +304,7 @@ claude-code "add Ty Knotts dialogue system with text box"
 - **Ty's Commentary:** "Shocking. Another delay."
 
 ### **CatGPT**
+
 - **Appearance:** Smug AI cat with holographic whiskers
 - **Attack Pattern:**
   - "Hallucinates" phantom fish that distract you
@@ -282,6 +314,7 @@ claude-code "add Ty Knotts dialogue system with text box"
 - **Ty's Commentary:** "At least it's not boring."
 
 ### **Ant-tropic**
+
 - **Appearance:** Friendly-looking AI with bowtie, nervous smile
 - **Attack Pattern:**
   - Pauses to "consider ethical implications"
@@ -291,6 +324,7 @@ claude-code "add Ty Knotts dialogue system with text box"
 - **Ty's Commentary:** "Just pick a lane already."
 
 ### **Gaagle**
+
 - **Appearance:** Search bar with tentacles, ad banners everywhere
 - **Attack Pattern:**
   - Spawns sponsored fish that steal coins
@@ -304,7 +338,8 @@ claude-code "add Ty Knotts dialogue system with text box"
 ## Color Palette (16-Color Dithered)
 
 **For Fish & Environments:**
-```
+
+```text
 Natural Palette:
 - Deep Blue (#001f3f)
 - Ocean Blue (#0074D9)
@@ -325,6 +360,7 @@ Natural Palette:
 ```
 
 **For Cartoon Characters (Ty & Bosses):**
+
 - Full color, not dithered
 - Bold outlines
 - Vibrant, exaggerated
@@ -333,13 +369,15 @@ Natural Palette:
 
 ## Technical Considerations
 
-### **Performance Targets:**
+### **Performance Targets**
+
 - 30+ FPS for smooth fish movement
 - Touch response < 50ms
 - Max 15 fish on screen simultaneously
 - Boss battles may drop to 20 FPS (acceptable)
 
-### **Memory Management:**
+### **Memory Management**
+
 - Sprite sheets for fish animations
 - Compressed dialogue strings
 - EEPROM for save data:
@@ -348,7 +386,8 @@ Natural Palette:
   - Current tank state
   - Boss defeats
 
-### **Wokwi Testing Strategy:**
+### **Wokwi Testing Strategy**
+
 1. Test each fish species behavior individually
 2. Verify touch calibration
 3. Boss battle frame rate checks
@@ -360,32 +399,38 @@ Natural Palette:
 ## Asset Generation Workflow
 
 ### **Step 1: Google AI Prompts**
+
 (Will be provided when ready)
 
 Example for fish:
-```
+
+```text
 "Photorealistic Rainbow Trout (Oncorhynchus mykiss), side view, 
 swimming pose, white background, high detail for 16-color dithering"
 ```
 
 Example for Ty Knotts:
-```
+
+```text
 "Cartoon largemouth bass character, grumpy expression, 
 arms crossed, wearing fishing vest, thick outlines, 
 comic book style"
 ```
 
 ### **Step 2: Dithering (Fish Only)**
+
 ```bash
 python tools/dither_tool.py assets/sprites/fish/trout.png --palette palette.txt
 ```
 
 ### **Step 3: Conversion**
+
 ```bash
 python tools/img2code.py assets/sprites/fish/trout_dithered.png > assets/converted/trout.h
 ```
 
 ### **Step 4: Integration**
+
 ```cpp
 #include "assets/converted/trout.h"
 // Use in sprite rendering

@@ -2,6 +2,8 @@
 
 **"Knot Your Average Fishing Game"**
 
+![Bass Hole Title Screen](docs/images/title_screen.png)
+
 An open-source Insaniquarium-style game for the ESP32 CYD (Cheap Yellow Display). Feed fish, collect coins, and survive the sass of Ty Knotts - the grumpiest largemouth bass guide in Northern California.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -36,6 +38,7 @@ Whether you want to play the game, learn ESP32 game development, or fork it to b
 - [x] Simple shape-based graphics
 
 ### Planned
+
 - [ ] Sprite-based graphics (16-color dithered fish)
 - [ ] Ty Knotts narrator with dialogue system
 - [ ] Enemy fishermen (Clankers, Cogsuckers)
@@ -66,30 +69,17 @@ git clone https://github.com/boxwrench/Bass-Hole.git
 cd Bass-Hole
 ```
 
-### 2. Install Dependencies
+### 2. PlatformIO (Recommended)
 
-**Arduino IDE:**
-1. Install [ESP32 board support](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html)
-2. Install libraries via Library Manager:
-   - `TFT_eSPI` by Bodmer
-   - `XPT2046_Touchscreen` by Paul Stoffregen
+1. Open the project folder in **VS Code**.
+2. Install the **PlatformIO** extension.
+3. Click the **PlatformIO** icon in the sidebar.
+4. Under `Project Tasks`, click **Build** to compile.
+5. Click **Upload** to flash your device.
 
-### 3. Configure TFT_eSPI
+**Note:** Dependencies (`TFT_eSPI`, `XPT2046`) are automatically managed via `platformio.ini`.
 
-Copy `BassHole/User_Setup.h` to your TFT_eSPI library folder:
-- Windows: `Documents\Arduino\libraries\TFT_eSPI\`
-- Mac/Linux: `~/Arduino/libraries/TFT_eSPI/`
-
-This configures the correct pins for the CYD 2.4" display.
-
-### 4. Upload
-
-1. Open `BassHole/BassHole.ino` in Arduino IDE
-2. Select **Board:** "ESP32 Dev Module"
-3. Select your COM port
-4. Click Upload
-
-### 5. Play!
+### 3. Play!
 
 - **Tap the tank** to drop food
 - **Tap coins** to collect them
@@ -97,19 +87,20 @@ This configures the correct pins for the CYD 2.4" display.
 
 ## Project Structure
 
-```
+```text
 Bass-Hole/
-├── BassHole/               # Arduino sketch folder
-│   ├── BassHole.ino        # Main entry point
+├── src/                    # Source code
+│   └── main.cpp            # Main entry point (formerly BassHole.ino)
+├── include/                # Header files
 │   ├── config.h            # Hardware pins & game constants
-│   ├── game_state.h/cpp    # State machine, save/load
-│   ├── fish.h/cpp          # Fish entity system
-│   ├── food.h/cpp          # Food pellet system
-│   ├── coins.h/cpp         # Coin system
-│   ├── touch.h/cpp         # Touch input handling
-│   ├── graphics.h/cpp      # Rendering layer
-│   ├── sdcard.h/cpp        # SD card operations
-│   └── User_Setup.h        # TFT_eSPI configuration
+│   ├── game_state.h        # State machine, save/load checks
+│   ├── fish.h              # Fish entity system
+│   ├── food.h              # Food pellet system
+│   ├── coins.h             # Coin system
+│   ├── touch.h             # Touch input handling
+│   ├── graphics.h          # Rendering layer
+│   └── sdcard.h            # SD card operations
+├── platformio.ini          # Project configuration & dependencies
 ├── assets/                 # Art assets (sprites, backgrounds)
 ├── tools/                  # Asset conversion scripts
 ├── docs/                   # Documentation
@@ -163,6 +154,7 @@ See [DEVELOPMENT_STRATEGY.md](DEVELOPMENT_STRATEGY.md) for the complete design d
 ## Tech Stack
 
 - **MCU:** ESP32-WROOM-32
+- **IDE:** Cursor with PlatformIO Extension (Recommended)
 - **Display:** ILI9341 via TFT_eSPI
 - **Touch:** XPT2046 resistive touchscreen
 - **Storage:** SD card via SPI

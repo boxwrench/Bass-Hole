@@ -37,7 +37,7 @@ void touchInit() {
     // The library will use the default HSPI pins automatically
     touch.begin();
 
-    touch.setRotation(3);  // Match display rotation
+    touch.setRotation(0);  // Match display rotation (portrait, USB bottom)
 
     currentTouch.valid = false;
     lastTap.valid = false;
@@ -45,7 +45,7 @@ void touchInit() {
     tapOccurred = false;
 
 #if DEBUG_SERIAL
-    Serial.println("Touch configuration applied (Rotation 3, IRQ PULLUP)");
+    Serial.println("Touch configuration applied (Rotation 0, IRQ PULLUP)");
 
     // Test touch controller communication
     Serial.println("Testing touch controller...");
