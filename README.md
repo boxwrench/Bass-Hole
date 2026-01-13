@@ -26,12 +26,13 @@ Whether you want to play the game, learn ESP32 game development, or fork it to b
 
 ## Features
 
-### Current (Phase 1)
+### Current (Phase 1) - **Hardware Verified!**
 - [x] Core gameplay loop (feed fish → collect coins)
 - [x] Fish AI with hunger, growth, and coin generation
-- [x] Touch input for food drops and coin collection
+- [x] Touch input (Verified on TZT CYD 2.4")
 - [x] Multiple fish species with unique stats
 - [x] Game state save/load to SD card
+- [x] Corrected Display/Color configuration for CYD
 - [x] Simple shape-based graphics
 
 ### Planned

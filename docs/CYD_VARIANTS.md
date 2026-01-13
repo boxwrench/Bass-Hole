@@ -23,7 +23,7 @@ This file tracks working configurations for different ESP32 CYD (Cheap Yellow Di
 | **Chip** | ESP32-WROOM |
 | **Features** | WiFi, Bluetooth, SD card slot, voltage regulator |
 | **Tested By** | @boxwrench |
-| **Status** | In progress - debugging display settings |
+| **Status** | **WORKING** - Fully verified (Display + Touch) |
 
 **TFT_eSPI User_Setup.h:**
 ```cpp
@@ -48,36 +48,47 @@ This file tracks working configurations for different ESP32 CYD (Cheap Yellow Di
 #define SUPPORT_TRANSACTIONS
 ```
 
-**Backlight:**
+**Critical Startup Sequence (in setup()):**
 ```cpp
-// In gfxInit() - enable both common backlight pins
-pinMode(21, OUTPUT);
-digitalWrite(21, HIGH);
-pinMode(27, OUTPUT);
-digitalWrite(27, HIGH);
+void setup() {
+    // 1. Initialize touch FIRST
+    touchInit(); 
+
+    // 2. Initialize display second
+    gfxInit();
+    
+    // ...
+}
 ```
 
-**Touch SPI:**
+**Touch Configuration (touch.cpp):**
 ```cpp
-// Touch shares HSPI with display
-SPIClass hspi(HSPI);
-hspi.begin(14, 12, 13, TOUCH_CS);  // SCK, MISO, MOSI, CS
-touch.begin(hspi);
+// Use both CS and IRQ pins in constructor
+static XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
+
+void touchInit() {
+    pinMode(TOUCH_IRQ, INPUT_PULLUP);
+    touch.begin(); // Let library handle defaults
+    touch.setRotation(3);
+}
 ```
 
-**Touch Calibration:**
+**Ghost Image Fix (graphics.cpp):**
 ```cpp
-// TODO: Add calibrated values after testing
-#define TOUCH_MIN_X  200
-#define TOUCH_MAX_X  3800
-#define TOUCH_MIN_Y  200
-#define TOUCH_MAX_Y  3800
+void gfxInit() {
+    tft.init();
+    // Clear memory in landscape first, then portrait
+    tft.setRotation(1); 
+    tft.fillScreen(TFT_BLACK);
+    tft.setRotation(3); 
+    tft.fillScreen(TFT_BLACK);
+}
 ```
 
 **Notes:**
-- Display required BGR color order (reds showed as blues without it)
-- Backlight not on by default - must set GPIO HIGH
-- Touch calibration TBD
+- **Initialization Order**: `touchInit()` MUST come before `gfxInit()`. If the display initializes first, the SPI bus state can prevent the touch controller from starting correctly.
+- **IRQ Pin**: Using the IRQ pin (GPIO 36) in the constructor and for polling is significantly more stable than SPI polling alone.
+- **Colors**: Requires `TFT_BGR` and `tft.invertDisplay(true)`.
 
 ---
 

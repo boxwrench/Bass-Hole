@@ -47,7 +47,16 @@ void setup() {
     Serial.println();
 #endif
 
-    // Initialize display first (gives visual feedback)
+    // Initialize touch FIRST (before display claims SPI bus)
+    touchInit();
+
+#if DEBUG_SERIAL
+    // Show calibration instructions
+    touchCalibrate();
+    delay(3000);  // Give time to read instructions
+#endif
+
+    // Initialize display second (gives visual feedback)
     gfxInit();
     gfxClear(COLOR_BLACK);
     gfxDrawText("BASS HOLE", 60, 140, COLOR_WHITE, 3);
@@ -62,8 +71,7 @@ void setup() {
     }
     delay(500);
 
-    // Initialize touch
-    touchInit();
+    // Confirm touch initialized
     gfxDrawText("Touch OK", 80, 220, COLOR_UI_GREEN, 1);
     delay(500);
 

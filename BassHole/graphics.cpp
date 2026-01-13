@@ -20,17 +20,25 @@ void gfxInit() {
     digitalWrite(27, HIGH);
 
     tft.init();
-    tft.setRotation(0);  // Try 0, 1, 2, 3 for correct orientation
-    tft.invertDisplay(false);  // Try true if colors inverted
+    
+    // Aggressive clear: The ILI9341 has 320x240 native memory.
+    // Clear it in landscape orientation first to ensure we hit all pixels.
+    tft.setRotation(1); 
+    tft.fillScreen(TFT_BLACK);
+    
+    tft.setRotation(3);  // Return to Portrait, USB at bottom
+    tft.invertDisplay(true);  // Required for correct colors on this CYD
 
-    // Clear screen
+    // Clear entire visible area again
     tft.fillScreen(TFT_BLACK);
 
 #if DEBUG_SERIAL
     Serial.println("Display initialized");
-    Serial.print("Width: ");
+    Serial.print("Rotation: ");
+    Serial.println(tft.getRotation());
+    Serial.print("Internal Width: ");
     Serial.print(tft.width());
-    Serial.print(" Height: ");
+    Serial.print(" Internal Height: ");
     Serial.println(tft.height());
 #endif
 }

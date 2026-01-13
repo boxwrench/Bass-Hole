@@ -91,7 +91,7 @@
 
 // Touch settings
 #define TOUCH_DEBOUNCE_MS 100     // Minimum ms between touch events
-#define TOUCH_MIN_PRESSURE 400    // Minimum pressure to register touch (increase if phantom touches)
+#define TOUCH_MIN_PRESSURE 200    // Minimum pressure to register touch (increase if phantom touches)
 
 // ============================================================================
 // FISH SPECIES DATA

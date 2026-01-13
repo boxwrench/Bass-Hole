@@ -142,26 +142,16 @@ Features:
 The main loop in `BassHole.ino` follows this pattern:
 
 ```cpp
-void loop() {
-    // 1. TIMING
-    // Calculate delta time, limit frame rate to ~30 FPS
+void setup() {
+    // 1. INITIALIZE HARDWARE
+    // IMPORTANT: touchInit must come BEFORE gfxInit for bus stability
+    touchInit();          
+    gfxInit();            
+    sdInit();
 
-    // 2. INPUT
-    touchUpdate();        // Read touch hardware
-    handleInput();        // Process taps based on game state
-
-    // 3. UPDATE
-    if (state == PLAYING) {
-        fishUpdate();     // Move fish, check hunger, drop coins
-        foodUpdate();     // Move food downward
-        coinsUpdate();    // Float coins, check expiration
-    }
-
-    // 4. RENDER
-    render();             // Draw everything based on state
-
-    // 5. DEBUG
-    // FPS counter, serial output
+    // 2. INITIALIZE GAME SYSTEMS
+    fishInit();
+    // ...
 }
 ```
 

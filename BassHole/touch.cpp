@@ -2,9 +2,9 @@
 #include <XPT2046_Touchscreen.h>
 #include <SPI.h>
 
-// Touch controller shares SPI with display
-// TFT_eSPI handles bus sharing via SUPPORT_TRANSACTIONS
-static XPT2046_Touchscreen touch(TOUCH_CS);
+// Touch controller shares SPI with display (HSPI)
+// Pass both CS and IRQ pins for proper initialization
+static XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
 
 // Touch state
 static TouchPoint currentTouch;
@@ -21,10 +21,22 @@ static unsigned long lastTouchTime = 0;
 #define TOUCH_MAX_Y  3800
 
 void touchInit() {
-    // Touch shares SPI bus with display
-    // SUPPORT_TRANSACTIONS in TFT_eSPI handles the switching
+#if DEBUG_SERIAL
+    Serial.println("Initializing XPT2046 touch on shared SPI...");
+    Serial.print("Touch IRQ pin: ");
+    Serial.println(TOUCH_IRQ);
+#endif
+
+    pinMode(TOUCH_IRQ, INPUT_PULLUP);
+    pinMode(TOUCH_CS, OUTPUT);
+    digitalWrite(TOUCH_CS, HIGH); // Start with touch disabled
+
+    // Let XPT2046 library initialize its own SPI instance
+    // This avoids conflicts with TFT_eSPI's bus management
+    // The library will use the default HSPI pins automatically
     touch.begin();
-    touch.setRotation(0);  // Match display rotation
+
+    touch.setRotation(3);  // Match display rotation
 
     currentTouch.valid = false;
     lastTap.valid = false;
@@ -32,67 +44,93 @@ void touchInit() {
     tapOccurred = false;
 
 #if DEBUG_SERIAL
-    Serial.println("Touch initialized");
+    Serial.println("Touch configuration applied (Rotation 3, IRQ PULLUP)");
+
+    // Test touch controller communication
+    Serial.println("Testing touch controller...");
+    TS_Point testPoint = touch.getPoint();
+    Serial.print("Initial read -> X:");
+    Serial.print(testPoint.x);
+    Serial.print(" Y:");
+    Serial.print(testPoint.y);
+    Serial.print(" Z:");
+    Serial.println(testPoint.z);
+
+    if (testPoint.x == -4096 || testPoint.y == -4096) {
+        Serial.println("WARNING: Touch controller not responding properly!");
+        Serial.println("Check SPI wiring and shared bus configuration.");
+    } else {
+        Serial.println("Touch controller communication OK");
+    }
 #endif
 }
 
 void touchUpdate() {
     tapOccurred = false;
 
-    // Check if screen is touched
-    bool touched = touch.touched();
+    // On CYD, TOUCH_IRQ (36) is LOW when the screen is touched.
+    bool irqTouched = (digitalRead(TOUCH_IRQ) == LOW);
 
-    if (touched) {
-        TS_Point p = touch.getPoint();
+    if (!irqTouched) {
+        if (wasTouched) {
+            // Touch released - this is a tap
+            unsigned long now = millis();
+            if (now - lastTouchTime > TOUCH_DEBOUNCE_MS) {
+                tapOccurred = true;
+                lastTap = currentTouch;
+                lastTouchTime = now;
+#if DEBUG_TOUCH
+                Serial.println("Touch Released (Tap)");
+#endif
+            }
+        }
+        currentTouch.valid = false;
+        wasTouched = false;
+        return;
+    }
 
-        // Filter out noise - check pressure is in valid range
-        if (p.z < TOUCH_MIN_PRESSURE || p.z > 3000) {
-            touched = false;
-        } else {
-            // Map raw coordinates to screen coordinates
-            // Note: You may need to swap X/Y or invert based on your screen orientation
-            int16_t mappedX = map(p.x, TOUCH_MIN_X, TOUCH_MAX_X, 0, SCREEN_WIDTH);
-            int16_t mappedY = map(p.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 0, SCREEN_HEIGHT);
-
-            // Clamp to screen bounds
-            mappedX = constrain(mappedX, 0, SCREEN_WIDTH - 1);
-            mappedY = constrain(mappedY, 0, SCREEN_HEIGHT - 1);
-
-            currentTouch.x = mappedX;
-            currentTouch.y = mappedY;
-            currentTouch.pressure = p.z;
-            currentTouch.valid = true;
+    // IRQ says touched, read SPI coordinates
+    TS_Point p = touch.getPoint();
+    
+    // Filter out obvious noise
+    bool pressureOk = (p.z >= TOUCH_MIN_PRESSURE && p.z < 5000);
 
 #if DEBUG_TOUCH
-            Serial.print("Touch: ");
-            Serial.print(mappedX);
-            Serial.print(", ");
-            Serial.print(mappedY);
-            Serial.print(" (raw: ");
-            Serial.print(p.x);
-            Serial.print(", ");
-            Serial.print(p.y);
-            Serial.println(")");
+    if (pressureOk || p.z > 50) {
+        Serial.print("Raw touch -> X:");
+        Serial.print(p.x);
+        Serial.print(" Y:");
+        Serial.print(p.y);
+        Serial.print(" Z:");
+        Serial.println(p.z);
+    }
 #endif
-        }
-    }
 
-    // Detect tap (touch released)
-    unsigned long now = millis();
-    if (!touched && wasTouched) {
-        // Touch was released - this is a tap
-        if (now - lastTouchTime > TOUCH_DEBOUNCE_MS) {
-            tapOccurred = true;
-            lastTap = currentTouch;
-            lastTouchTime = now;
-        }
-    }
+    if (pressureOk) {
+        // Map raw coordinates to screen
+        int16_t mappedX = map(p.x, TOUCH_MIN_X, TOUCH_MAX_X, 0, SCREEN_WIDTH);
+        int16_t mappedY = map(p.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 0, SCREEN_HEIGHT);
 
-    if (!touched) {
+        // Clamp to screen
+        mappedX = constrain(mappedX, 0, SCREEN_WIDTH - 1);
+        mappedY = constrain(mappedY, 0, SCREEN_HEIGHT - 1);
+
+        currentTouch.x = mappedX;
+        currentTouch.y = mappedY;
+        currentTouch.pressure = p.z;
+        currentTouch.valid = true;
+
+#if DEBUG_TOUCH
+        Serial.print("Touch: ");
+        Serial.print(mappedX);
+        Serial.print(", ");
+        Serial.println(mappedY);
+#endif
+        wasTouched = true;
+    } else {
         currentTouch.valid = false;
+        wasTouched = false;
     }
-
-    wasTouched = touched;
 }
 
 TouchPoint touchGet() {
@@ -112,20 +150,22 @@ TouchPoint touchGetTap() {
 }
 
 void touchCalibrate() {
-    // Simple calibration routine
-    // Touch the corners when prompted and record raw values
+    // Simple calibration routine - prints instructions for manual calibration
 
 #if DEBUG_SERIAL
-    Serial.println("=== TOUCH CALIBRATION ===");
-    Serial.println("Touch corners when prompted");
-    Serial.println("Record the raw X,Y values shown");
-    Serial.println("Update TOUCH_MIN/MAX values in touch.cpp");
-    Serial.println("=========================");
+    Serial.println();
+    Serial.println("========================================");
+    Serial.println("       TOUCH CALIBRATION MODE");
+    Serial.println("========================================");
+    Serial.println("Touch each corner firmly for 1 second:");
+    Serial.println("1. TOP-LEFT corner");
+    Serial.println("2. TOP-RIGHT corner");
+    Serial.println("3. BOTTOM-LEFT corner");
+    Serial.println("4. BOTTOM-RIGHT corner");
+    Serial.println("5. CENTER of screen");
+    Serial.println();
+    Serial.println("Record the RAW X,Y values for each.");
+    Serial.println("Then update TOUCH_MIN/MAX in touch.cpp");
+    Serial.println("========================================");
 #endif
-
-    // In a full implementation, this would:
-    // 1. Show "Touch top-left" on screen
-    // 2. Wait for touch, record raw values
-    // 3. Repeat for other corners
-    // 4. Calculate and save calibration
 }
