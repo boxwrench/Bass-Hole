@@ -19,3 +19,14 @@ Initial `platformio.ini` had malformed flags (e.g., `-SPI_FREQUENCY=...` without
 
 ### Working CYD Configuration
 See `SETUP_CYD.md` for the reliable `platformio.ini` template.
+
+### Challenge: Antigravity IDE & Open VSX Registry
+Antigravity IDE uses the Open VSX registry, which does not host the `PlatformIO IDE` or `ms-vscode.cpptools` extensions due to Microsoft licensing restrictions.
+- **Symptom**: "Extension deprecated" or "Missing dependencies" errors.
+- **Solution**: Manually downloaded official `.vsix` files from the Visual Studio Marketplace and installed them via the Antigravity CLI:
+  ```powershell
+  # PlatformIO IDE
+  & ".../Antigravity/bin/antigravity.cmd" --install-extension platformio.vsix
+  # C/C++ Tools (win32-x64)
+  & ".../Antigravity/bin/antigravity.cmd" --install-extension cpptools.vsix
+  ```

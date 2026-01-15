@@ -13,7 +13,8 @@ This workflow helps you manage the Bass Hole project using the PlatformIO IDE ex
 
 1. Connect your CYD to **COM3** (as configured in `platformio.ini`).
 2. Click the **Right Arrow** icon (→) in the status bar or PlatformIO sidebar.
-3. The code will be flashed to your device.
+3. **Important:** If the upload fails to connect, hold the **BOOT** button on the CYD while the upload starts, then release it once flashing begins.
+4. The code will be flashed to your device.
 
 ### Monitoring Output
 

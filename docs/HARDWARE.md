@@ -124,18 +124,75 @@ If your display doesn't work:
 3. **Mirrored display** - Try different rotation values
 4. **Garbled display** - Reduce `SPI_FREQUENCY` to `27000000`
 
+## Display Configuration
+
+### TZT ESP32 CYD 2.4" - Verified Settings
+
+**Tested Configuration (2025-01-14):**
+
+```cpp
+// Display
+tft.setRotation(0);          // Portrait, USB at bottom
+tft.invertDisplay(true);     // VERIFIED via color test
+
+// Touch
+touch.setRotation(1);        // Touch uses different rotation than display
+
+// Color constants (config.h)
+#define COLOR_BLACK  0x0000  // Normal RGB565 values
+#define COLOR_WHITE  0xFFFF
+// ... etc
+```
+
+**Why This Works:**
+- `invertDisplay(true)` inverts all RGB565 values at hardware level
+- Sprites contain normal RGB565 data → display inverts → correct screen colors
+- Text/UI use normal RGB565 constants → display inverts → correct screen colors
+- Everything is consistent
+
+### Testing Your Display (Different Variants)
+
+**IMPORTANT:** Different ESP32 CYD manufacturers may need `invertDisplay(false)`. To test yours:
+
+1. **Add color test to setup():**
+   ```cpp
+   // In main.cpp setup(), after gfxInit()
+   gfxDrawColorTest();
+   delay(30000);  // Show for 30 seconds
+   ```
+
+2. **Upload and observe:**
+   - **If "1. RAW" shows Red|Green|Blue|White|Black correctly** → Use `invertDisplay(true)` + normal RGB565 values
+   - **If "2. XOR" shows Red|Green|Blue|White|Black correctly** → Use `invertDisplay(false)` + normal RGB565 values
+
+3. **Update graphics.cpp:**
+   ```cpp
+   #define DISPLAY_INVERT true  // or false based on test
+   ```
+
+4. **Remove test from setup() and rebuild**
+
+The color test eliminates guesswork and works for any ILI9341 display variant.
+
 ## Touch Calibration
 
 The XPT2046 touch controller returns raw ADC values that need mapping to screen coordinates.
 
-### Default Values (2.4" CYD)
+### TZT ESP32 CYD 2.4" - Verified Values
+
+**Working configuration (2025-01-14):**
 
 ```cpp
 // In touch.cpp
-#define TOUCH_MIN_X  200
-#define TOUCH_MAX_X  3800
-#define TOUCH_MIN_Y  200
-#define TOUCH_MAX_Y  3800
+#define TOUCH_MIN_X  600
+#define TOUCH_MAX_X  3600
+#define TOUCH_MIN_Y  500
+#define TOUCH_MAX_Y  3600
+
+// Mapping (portrait mode, rotation 0)
+touch.setRotation(1);
+int16_t mappedX = map(p.x, TOUCH_MAX_X, TOUCH_MIN_X, 0, SCREEN_WIDTH);  // X inverted
+int16_t mappedY = map(p.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 0, SCREEN_HEIGHT); // Y normal
 ```
 
 ### Calibration Process
@@ -148,18 +205,20 @@ The XPT2046 touch controller returns raw ADC values that need mapping to screen 
 
 2. Upload and open Serial Monitor (115200 baud)
 
-3. Tap the **corners** of the screen:
-   - Top-left: Note X_min, Y_min
-   - Bottom-right: Note X_max, Y_max
+3. Tap the **four corners** of the screen:
+   - Top-left: Note raw X, Y values
+   - Top-right: Note raw X, Y values
+   - Bottom-left: Note raw X, Y values
+   - Bottom-right: Note raw X, Y values
 
-4. Update values in `touch.cpp`
+4. Determine min/max for X and Y axes
 
-5. You may also need to swap X/Y or invert axes depending on screen orientation:
-   ```cpp
-   // In touchUpdate() - try these if touch is offset
-   int16_t mappedX = map(p.y, MIN, MAX, 0, WIDTH);  // Swap X/Y
-   int16_t mappedY = map(p.x, MAX, MIN, 0, HEIGHT); // Invert
-   ```
+5. Test mapping - if crosshairs appear in wrong place:
+   - **Swap X/Y:** Touch rotation might need changing
+   - **Invert X or Y:** Swap MIN/MAX in map() function
+   - **Try all 4 rotations:** setRotation(0-3)
+
+6. Update values in `touch.cpp`
 
 ## SD Card
 

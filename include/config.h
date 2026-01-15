@@ -31,18 +31,27 @@
 // ============================================================================
 // DISPLAY COLORS (RGB565 format)
 // ============================================================================
-
-#define COLOR_BLACK       0x0000
-#define COLOR_WHITE       0xFFFF
+//
+// VERIFIED: TZT ESP32 CYD 2.4" uses invertDisplay(true) with normal RGB565 values
+//
+// If colors look wrong on your board:
+// 1. Call gfxDrawColorTest() in main.cpp setup() to run color diagnostic
+// 2. If "1. RAW" test is correct → use invertDisplay(true) + these normal values
+// 3. If "2. XOR" test is correct → use invertDisplay(false) + XOR these values
+//
+// Different display manufacturers may require different inversion settings.
+//
+#define COLOR_BLACK       0x0000  // Black
+#define COLOR_WHITE       0xFFFF  // White
 #define COLOR_WATER_DEEP  0x0019  // Deep blue
 #define COLOR_WATER_MID   0x03BF  // Ocean blue
 #define COLOR_WATER_LIGHT 0x7F3F  // Aqua
 #define COLOR_SAND        0xD5AA  // Tan/sand bottom
 #define COLOR_COIN_GOLD   0xFE60  // Gold for coins
 #define COLOR_FOOD_BROWN  0x8A22  // Fish food pellets
-#define COLOR_UI_GREEN    0x07E0  // UI elements
-#define COLOR_UI_RED      0xF800  // Warnings/damage
-#define COLOR_TEXT        0xFFFF  // Default text
+#define COLOR_UI_GREEN    0x07E0  // UI elements (green)
+#define COLOR_UI_RED      0xF800  // Warnings/damage (red)
+#define COLOR_TEXT        0xFFFF  // Default text (white)
 
 // ============================================================================
 // GAME CONSTANTS

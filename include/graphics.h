@@ -33,26 +33,53 @@ void gfxDrawTank();
 // Draw a fish
 void gfxDrawFish(Fish* fish);
 
+// Clear a fish (restore background at its position)
+void gfxClearFish(Fish* fish);
+
+// Clear all fish (call before updating positions)
+void gfxClearAllFish();
+
 // Draw all fish
 void gfxDrawAllFish();
+
+// Restore background at specific area (dirty rect)
+void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h);
 
 // Draw a food pellet
 void gfxDrawFood(Food* food);
 
+// Clear a food pellet
+void gfxClearFood(Food* food);
+
 // Draw all food
 void gfxDrawAllFood();
+
+// Clear all food
+void gfxClearAllFood();
 
 // Draw a coin
 void gfxDrawCoin(Coin* coin);
 
+// Clear a coin
+void gfxClearCoin(Coin* coin);
+
 // Draw all coins
 void gfxDrawAllCoins();
+
+// Clear all coins
+void gfxClearAllCoins();
 
 // Draw the UI (coins, level, etc)
 void gfxDrawUI();
 
 // Draw FPS counter (debug)
 void gfxDrawFPS(uint16_t fps);
+
+// Draw touch debug crosshair
+void gfxDrawTouchDebug(int16_t x, int16_t y);
+
+// Draw color test pattern (debug)
+void gfxDrawColorTest();
 
 // ============================================================================
 // PRIMITIVES (simple shapes for Phase 1)
@@ -67,10 +94,19 @@ void gfxDrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 void gfxDrawText(const char* text, int16_t x, int16_t y, uint16_t color, uint8_t size = 1);
 
 // ============================================================================
-// SPRITE RENDERING (for later phases with SD card sprites)
+// SPRITE RENDERING
 // ============================================================================
 
-// Draw sprite from SD card (loads on demand)
-// void gfxDrawSprite(const char* filename, int16_t x, int16_t y);
+// Draw sprite from PROGMEM (no transparency)
+void gfxDrawSprite(const uint16_t* sprite, int16_t x, int16_t y,
+                   int16_t width, int16_t height);
+
+// Draw sprite with transparency (skips magenta 0xF81F pixels)
+void gfxDrawSpriteTransparent(const uint16_t* sprite, int16_t x, int16_t y,
+                               int16_t width, int16_t height);
+
+// Draw sprite with transparency and horizontal flip
+void gfxDrawSpriteTransparentFlip(const uint16_t* sprite, int16_t x, int16_t y,
+                                   int16_t width, int16_t height);
 
 #endif // GRAPHICS_H

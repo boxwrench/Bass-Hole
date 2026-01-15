@@ -67,6 +67,7 @@ void setup() {
 
   // Initialize display second (gives visual feedback)
   gfxInit();
+
   gfxClear(COLOR_BLACK);
   gfxDrawText("BASS HOLE", 60, 140, COLOR_WHITE, 3);
   gfxDrawText("Loading...", 80, 180, COLOR_WATER_LIGHT, 1);
@@ -129,8 +130,23 @@ void loop() {
   touchUpdate();
   handleInput();
 
+  // State transition logic (detect entry to PLAYING)
+  static GameState lastState = STATE_BOOT;
+  if (game.state == STATE_PLAYING && lastState != STATE_PLAYING) {
+      // Draw full background ONCE when entering playing state
+      // (Also catches resume from pause)
+      gfxDrawTank();
+  }
+  lastState = game.state;
+
   // Update game entities
   if (game.state == STATE_PLAYING && !game.isPaused) {
+    // DIRTY RECT RENDERING:
+    // 1. Clear OLD positions (restore background)
+    gfxClearAllFish();
+    gfxClearAllFood();
+    gfxClearAllCoins();
+    // 2. Update physics (positions change)
     fishUpdate(deltaTime);
     foodUpdate(deltaTime);
     coinsUpdate(deltaTime);
@@ -227,8 +243,27 @@ void handlePlayingInput(TouchPoint tap) {
     int16_t btnX = (SCREEN_WIDTH - btnWidth) / 2;
     int16_t btnY = TANK_BOTTOM + 5;
 
+#if DEBUG_SERIAL
+    Serial.print("Footer tap at Y=");
+    Serial.print(tap.y);
+    Serial.print(" (TANK_BOTTOM=");
+    Serial.print(TANK_BOTTOM);
+    Serial.print(") Button: ");
+    Serial.print(btnX);
+    Serial.print("-");
+    Serial.print(btnX + btnWidth);
+    Serial.print(", ");
+    Serial.print(btnY);
+    Serial.print("-");
+    Serial.println(btnY + btnHeight);
+#endif
+
     if (tap.x >= btnX && tap.x <= btnX + btnWidth && tap.y >= btnY &&
         tap.y <= btnY + btnHeight) {
+
+#if DEBUG_SERIAL
+      Serial.println("Buy button HIT!");
+#endif
 
       if (game.coins >= FISH_COST_BASIC) {
         game.coins -= FISH_COST_BASIC;
@@ -272,8 +307,8 @@ void render() {
 }
 
 void renderPlaying() {
-  // Draw background
-  gfxDrawTank();
+  // Background drawn via dirty rect restoration or state entry
+  // gfxDrawTank(); 
 
   // Draw game entities (order matters for layering)
   gfxDrawAllFood();
@@ -282,6 +317,20 @@ void renderPlaying() {
 
   // Draw UI
   gfxDrawUI();
+
+  // DEBUG: Show last tap location
+  #if DEBUG_TOUCH
+  static TouchPoint lastDebugTap = {0, 0, 0, false};
+  static unsigned long lastDebugTime = 0;
+  if (touchTapped()) {
+    lastDebugTap = touchGetTap();
+    lastDebugTime = millis();
+  }
+  // Show for 2 seconds
+  if (millis() - lastDebugTime < 2000 && lastDebugTap.valid) {
+    gfxDrawTouchDebug(lastDebugTap.x, lastDebugTap.y);
+  }
+  #endif
 }
 
 void renderGameOver() {

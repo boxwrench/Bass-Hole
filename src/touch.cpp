@@ -13,9 +13,16 @@ static bool wasTouched = false;
 static bool tapOccurred = false;
 static unsigned long lastTouchTime = 0;
 
-// Calibration values for ESP32 CYD 2.4" (universal calibration)
-// Based on testing: X range 594-3577, Y range 498-3602
-// NOTE: Y axis is inverted on this hardware
+// Calibration values for TZT ESP32 CYD 2.4" (verified 2025-01-14)
+// Raw touch ranges: X 600-3600, Y 500-3600
+//
+// MAPPING (for portrait mode, rotation 0, USB at bottom):
+// - Touch rotation: 1
+// - X-axis: INVERTED (map from MAX→MIN to 0→WIDTH)
+// - Y-axis: NORMAL (map from MIN→MAX to 0→HEIGHT)
+//
+// This produces accurate touch registration across the entire screen.
+//
 #define TOUCH_MIN_X  600
 #define TOUCH_MAX_X  3600
 #define TOUCH_MIN_Y  500
@@ -36,8 +43,7 @@ void touchInit() {
     // This avoids conflicts with TFT_eSPI's bus management
     // The library will use the default HSPI pins automatically
     touch.begin();
-
-    touch.setRotation(0);  // Match display rotation (portrait, USB bottom)
+    touch.setRotation(3);  // Match display rotation 3
 
     currentTouch.valid = false;
     lastTap.valid = false;
@@ -108,10 +114,12 @@ void touchUpdate() {
 #endif
 
     if (pressureOk) {
-        // Map raw coordinates to screen
-        int16_t mappedX = map(p.x, TOUCH_MIN_X, TOUCH_MAX_X, 0, SCREEN_WIDTH);
-        // Y-axis is inverted: high raw Y = top of screen (0), low raw Y = bottom (SCREEN_HEIGHT)
-        int16_t mappedY = map(p.y, TOUCH_MAX_Y, TOUCH_MIN_Y, 0, SCREEN_HEIGHT);
+        // Map raw coordinates for Rotation 3 (Portrait, USB down)
+        // Verified mapping for Rotation 3:
+        // X = Normal Map (Min->Max)
+        // Y = Normal Map (Min->Max)
+        int16_t mappedX = map(p.x, 300, 3800, 0, SCREEN_WIDTH);
+        int16_t mappedY = map(p.y, 300, 3800, 0, SCREEN_HEIGHT);
 
         // Clamp to screen
         mappedX = constrain(mappedX, 0, SCREEN_WIDTH - 1);
@@ -121,12 +129,8 @@ void touchUpdate() {
         currentTouch.y = mappedY;
         currentTouch.pressure = p.z;
         currentTouch.valid = true;
-
 #if DEBUG_TOUCH
-        Serial.print("Touch: ");
-        Serial.print(mappedX);
-        Serial.print(", ");
-        Serial.println(mappedY);
+        Serial.printf("Touch Mapped: X:%d Y:%d (Raw: %d,%d, Z:%d)\n", mappedX, mappedY, p.x, p.y, p.z);
 #endif
         wasTouched = true;
     } else {
