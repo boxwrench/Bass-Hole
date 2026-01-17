@@ -4,7 +4,6 @@
 #include "coins.h"
 #include "game_state.h"
 #include "sprites/sprites.h"
-#include "sprites/test_colors.h"
 #include <TFT_eSPI.h>
 #include <math.h>
 #include <string.h>
@@ -38,7 +37,7 @@
 #define USE_BACKGROUND_SPRITE 1
 
 // Display color inversion - Try both true and false depending on your board
-#define DISPLAY_INVERT true
+#define DISPLAY_INVERT false
 
 // TFT display instance
 static TFT_eSPI tft = TFT_eSPI();
@@ -62,12 +61,11 @@ void gfxInit()
     
     // CYD requires color inversion on some panels
 #if DISPLAY_INVERT
-    // tft.invertDisplay(true); // Handled by TFT_INVERSION_ON build flag
+    tft.invertDisplay(true); // ENABLED: Hardware test confirmed ST7789 needs this (2026-01-16)
 #endif
 
-    // CRITICAL FIX: Enable byte swapping for PROGMEM sprites
-    // This ensures colors render correctly (fixes endian mismatch)
-    // tft.setSwapBytes(true); // DISABLED: Testing if this causes washed out colors
+
+    // Manual byte swapping is handled in gfxDrawSpriteTransparent() via drawPixel calls
 
     // Aggressive clear in ALL rotations to remove ghost images
     for (int r = 0; r < 4; r++)
@@ -78,6 +76,10 @@ void gfxInit()
 
     // Set final rotation
     tft.setRotation(3);
+
+    // Enable byte swapping for PROGMEM sprites (RGB565 from PNG)
+    // This ensures pushImage handles byte order correctly for ILI9341
+    tft.setSwapBytes(true);
 
 #if DEBUG_SERIAL
     Serial.println("=== DISPLAY INIT v2025.01.13.A ==="); // Unique identifier for THIS version
@@ -504,9 +506,9 @@ void gfxDrawSpriteTransparent(const uint16_t *sprite, int16_t x, int16_t y,
         for (int16_t px = 0; px < width; px++) {
             uint16_t pixel = pgm_read_word(&sprite[py * width + px]);
             if (pixel != SPRITE_TRANSPARENT_COLOR) {
-                // Manual byte swap needed for drawPixel because setSwapBytes only affects pushImage
-                // This is critical for ILI9341_DRIVER to avoid "washed out" colors
-                tft.drawPixel(x + px, y + py, (pixel >> 8) | (pixel << 8));
+                // With setSwapBytes(true) enabled globally, drawPixel needs the raw value
+                // The library handles byte order internally
+                tft.drawPixel(x + px, y + py, pixel);
             }
         }
     }
@@ -520,8 +522,8 @@ void gfxDrawSpriteTransparentFlip(const uint16_t *sprite, int16_t x, int16_t y,
         for (int16_t px = 0; px < width; px++) {
             uint16_t pixel = pgm_read_word(&sprite[py * width + (width - 1 - px)]);
             if (pixel != SPRITE_TRANSPARENT_COLOR) {
-                // Manual byte swap needed for drawPixel
-                tft.drawPixel(x + px, y + py, (pixel >> 8) | (pixel << 8));
+                // With setSwapBytes(true) enabled globally, drawPixel needs the raw value
+                tft.drawPixel(x + px, y + py, pixel);
             }
         }
     }
@@ -565,6 +567,7 @@ void gfxDrawColorTest() {
     tft.print("Test (pushImage):");
     yPos += 20;
     
+    /* DISABLED: test_colors sprite not available
     // IMPORTANT: Enable byte swapping for PROGMEM images
     // This solves the issue where colors are garbled (endian mismatch)
     tft.setSwapBytes(true); 
@@ -580,6 +583,7 @@ void gfxDrawColorTest() {
 
     // Draw outline around test
     tft.drawRect(9, yPos-1, 52, 52, COLOR_WHITE);
+    */
     
     yPos += 60;
     
