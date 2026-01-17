@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "author": "Bass Hole - Sprite Test",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-ili9341",
+      "id": "lcd1",
+      "top": -160,
+      "left": 200,
+      "attrs": {
+        "width": "320",
+        "height": "240"
+      }
+    }
+  ],
+  "connections": [
+    ["esp:TX", "$serialMonitor:RX", "green", ["h0"]],
+    ["esp:RX", "$serialMonitor:TX", "green", ["h0"]],
+    
+    ["esp:D13", "lcd1:MOSI", "blue", ["h0"]],
+    ["esp:D12", "lcd1:MISO", "purple", ["h0"]],
+    ["esp:D14", "lcd1:SCK", "yellow", ["h0"]],
+    ["esp:D15", "lcd1:CS", "orange", ["h0"]],
+    ["esp:D2", "lcd1:DC", "green", ["h0"]],
+    ["esp:D4", "lcd1:RST", "white", ["h0"]],
+    ["esp:D21", "lcd1:LED", "red", ["h0"]],
+    ["esp:3V3", "lcd1:VCC", "red", ["h0"]],
+    ["esp:GND.1", "lcd1:GND", "black", ["h0"]]
+  ],
+  "dependencies": {}
+}

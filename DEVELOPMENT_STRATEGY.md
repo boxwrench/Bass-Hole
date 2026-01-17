@@ -199,6 +199,53 @@ bass-hole-cyd/
 3. Convert to C arrays
 4. Integrate into game
 
+### **Phase 2.5: Sprite Display Pipeline Fix [PLANNED]**
+
+**Problem Identified (2026-01-16):**
+Current sprite rendering has inconsistent byte swapping causing color issues:
+- `gfxDrawSprite()` uses pushImage WITHOUT setSwapBytes
+- `gfxDrawSpriteTransparent()` uses manual byte swap with drawPixel
+- `gfxRestoreBackground()` uses pushImage WITHOUT setSwapBytes
+- platformio.ini missing `TFT_INVERSION_ON` despite code comments saying it's there
+
+**Research Findings:**
+THREE separate settings control sprite colors (often conflated):
+1. **RGB Order** (TFT_RGB vs TFT_BGR) - channel position
+2. **Byte Swap** (setSwapBytes) - endianness for pushImage
+3. **Inversion** (TFT_INVERSION_ON) - panel-level inversion
+
+**Goals:**
+
+- [ ] Run sprite test plan from DIST_ESP32-CYD-Tester (requires hardware)
+- [ ] Determine correct RGB_ORDER for our board
+- [ ] Determine correct INVERSION setting
+- [ ] Determine correct setSwapBytes setting
+- [ ] Update platformio.ini with verified settings
+- [ ] Refactor gfxInit() to set swap bytes ONCE
+- [ ] Refactor gfxDrawSpriteTransparent() to use pushImage with transparency
+- [ ] Remove manual byte swap code
+- [ ] Verify all sprite paths use consistent settings
+- [ ] Test background restoration with correct settings
+
+**Code Changes Required:**
+
+```cpp
+// platformio.ini - add after determining correct values:
+-DTFT_RGB_ORDER=TFT_BGR   ; or TFT_RGB based on test
+-DTFT_INVERSION_ON        ; if needed based on test
+
+// graphics.cpp gfxInit() - add once:
+tft.setSwapBytes(true);   // based on test result
+
+// graphics.cpp gfxDrawSpriteTransparent() - replace pixel loop:
+// OLD: for loop with drawPixel and manual swap
+// NEW: tft.pushImage(x, y, w, h, sprite, SPRITE_TRANSPARENT_COLOR);
+```
+
+**Blocked Until:** Hardware available for testing
+
+**Reference:** See `DIST_ESP32-CYD-Tester/docs/SPRITE_TEST_PLAN.md`
+
 ### **Phase 3: Core Loop**
 
 **Goals:**
