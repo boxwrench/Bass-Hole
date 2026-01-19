@@ -41,7 +41,7 @@
 #define DISPLAY_INVERT true
 
 // TFT display instance
-static TFT_eSPI tft = TFT_eSPI();
+TFT_eSPI tft = TFT_eSPI();
 
 // Sprite for double buffering (optional, uses more RAM)
 // static TFT_eSprite sprite = TFT_eSprite(&tft);
@@ -59,7 +59,7 @@ void gfxInit()
 
     // Portrait mode for CYD (Rotation 3 is often Portrait with USB down)
     tft.setRotation(3);
-    
+
     // CYD requires color inversion on some panels
 #if DISPLAY_INVERT
     // tft.invertDisplay(true); // Handled by TFT_INVERSION_ON build flag
@@ -235,28 +235,42 @@ void gfxDrawAllFish()
 }
 
 // Restore background at specific area (dirty rect)
-void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h) {
+void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h)
+{
 #if USE_BACKGROUND_SPRITE
     // Clip to tank area
-    if (x < TANK_LEFT) { w -= (TANK_LEFT - x); x = TANK_LEFT; }
-    if (y < TANK_TOP) { h -= (TANK_TOP - y); y = TANK_TOP; }
-    
+    if (x < TANK_LEFT)
+    {
+        w -= (TANK_LEFT - x);
+        x = TANK_LEFT;
+    }
+    if (y < TANK_TOP)
+    {
+        h -= (TANK_TOP - y);
+        y = TANK_TOP;
+    }
+
     // Bounds check
-    if (w <= 0 || h <= 0) return;
-    
+    if (w <= 0 || h <= 0)
+        return;
+
     // Calculate offsets into background sprite
     int16_t bgX = x - TANK_LEFT;
     int16_t bgY = y - TANK_TOP;
-    
-    // Bounds check for sprite source
-    if (bgX + w > SPRITE_BG_DELTA_WIDTH) w = SPRITE_BG_DELTA_WIDTH - bgX;
-    if (bgY + h > SPRITE_BG_DELTA_HEIGHT) h = SPRITE_BG_DELTA_HEIGHT - bgY;
 
-    if (w <= 0 || h <= 0) return;
+    // Bounds check for sprite source
+    if (bgX + w > SPRITE_BG_DELTA_WIDTH)
+        w = SPRITE_BG_DELTA_WIDTH - bgX;
+    if (bgY + h > SPRITE_BG_DELTA_HEIGHT)
+        h = SPRITE_BG_DELTA_HEIGHT - bgY;
+
+    if (w <= 0 || h <= 0)
+        return;
 
     // Draw background chunk line-by-line
     // We cannot push a rect from the large sprite directly as it's not contiguous
-    for (int16_t row = 0; row < h; row++) {
+    for (int16_t row = 0; row < h; row++)
+    {
         int32_t offset = (bgY + row) * SPRITE_BG_DELTA_WIDTH + bgX;
         tft.pushImage(x, y + row, w, 1, &sprite_bg_delta[offset]);
     }
@@ -267,8 +281,10 @@ void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h) {
 }
 
 // Clear a fish by redrawing the background behind it
-void gfxClearFish(Fish* fish) {
-    if (!fish || !fish->active) return;
+void gfxClearFish(Fish *fish)
+{
+    if (!fish || !fish->active)
+        return;
 
     int16_t spriteW, spriteH;
 
@@ -289,8 +305,10 @@ void gfxClearFish(Fish* fish) {
     gfxRestoreBackground(x - 2, y - 2, spriteW + 4, spriteH + 4);
 }
 
-void gfxClearAllFish() {
-    for (int i = 0; i < MAX_FISH; i++) {
+void gfxClearAllFish()
+{
+    for (int i = 0; i < MAX_FISH; i++)
+    {
         gfxClearFish(&fishPool[i]);
     }
 }
@@ -304,12 +322,14 @@ void gfxDrawFood(Food *food)
     tft.fillCircle((int16_t)food->x, (int16_t)food->y, FOOD_SIZE, COLOR_FOOD_BROWN);
 }
 
-void gfxClearFood(Food* food) {
-    if (!food || !food->active) return;
-    
+void gfxClearFood(Food *food)
+{
+    if (!food || !food->active)
+        return;
+
     // Clear rect around circle
     int16_t r = FOOD_SIZE + 2; // Padding
-    gfxRestoreBackground((int16_t)food->x - r, (int16_t)food->y - r, r*2, r*2);
+    gfxRestoreBackground((int16_t)food->x - r, (int16_t)food->y - r, r * 2, r * 2);
 }
 
 void gfxDrawAllFood()
@@ -320,8 +340,10 @@ void gfxDrawAllFood()
     }
 }
 
-void gfxClearAllFood() {
-    for (int i = 0; i < MAX_FOOD; i++) {
+void gfxClearAllFood()
+{
+    for (int i = 0; i < MAX_FOOD; i++)
+    {
         gfxClearFood(&foodPool[i]);
     }
 }
@@ -359,17 +381,21 @@ void gfxDrawAllCoins()
     }
 }
 
-void gfxClearCoin(Coin* coin) {
-    if (!coin || !coin->active) return;
-    
+void gfxClearCoin(Coin *coin)
+{
+    if (!coin || !coin->active)
+        return;
+
     // Coins animate (bob left/right) and have variable size
     // Max size is roughly 10px radius + 3px bob + padding
-    int16_t r = 16; 
-    gfxRestoreBackground((int16_t)coin->x - r, (int16_t)coin->y - r, r*2, r*2);
+    int16_t r = 16;
+    gfxRestoreBackground((int16_t)coin->x - r, (int16_t)coin->y - r, r * 2, r * 2);
 }
 
-void gfxClearAllCoins() {
-    for (int i = 0; i < MAX_COINS; i++) {
+void gfxClearAllCoins()
+{
+    for (int i = 0; i < MAX_COINS; i++)
+    {
         gfxClearCoin(&coinPool[i]);
     }
 }
@@ -431,8 +457,10 @@ void gfxDrawFPS(uint16_t fps)
 }
 
 // DEBUG: Draw touch crosshair
-void gfxDrawTouchDebug(int16_t x, int16_t y) {
-    if (x < 0 || y < 0) return;
+void gfxDrawTouchDebug(int16_t x, int16_t y)
+{
+    if (x < 0 || y < 0)
+        return;
 
     // Draw crosshair
     tft.drawLine(x - 10, y, x + 10, y, COLOR_UI_RED);
@@ -500,10 +528,13 @@ void gfxDrawSpriteTransparent(const uint16_t *sprite, int16_t x, int16_t y,
                               int16_t width, int16_t height)
 {
     // Pixel-by-pixel with transparency check (no XOR needed with TFT_INVERSION_ON)
-    for (int16_t py = 0; py < height; py++) {
-        for (int16_t px = 0; px < width; px++) {
+    for (int16_t py = 0; py < height; py++)
+    {
+        for (int16_t px = 0; px < width; px++)
+        {
             uint16_t pixel = pgm_read_word(&sprite[py * width + px]);
-            if (pixel != SPRITE_TRANSPARENT_COLOR) {
+            if (pixel != SPRITE_TRANSPARENT_COLOR)
+            {
                 // Manual byte swap needed for drawPixel because setSwapBytes only affects pushImage
                 // This is critical for ILI9341_DRIVER to avoid "washed out" colors
                 tft.drawPixel(x + px, y + py, (pixel >> 8) | (pixel << 8));
@@ -516,10 +547,13 @@ void gfxDrawSpriteTransparentFlip(const uint16_t *sprite, int16_t x, int16_t y,
                                   int16_t width, int16_t height)
 {
     // Horizontally flipped with transparency (no XOR needed with TFT_INVERSION_ON)
-    for (int16_t py = 0; py < height; py++) {
-        for (int16_t px = 0; px < width; px++) {
+    for (int16_t py = 0; py < height; py++)
+    {
+        for (int16_t px = 0; px < width; px++)
+        {
             uint16_t pixel = pgm_read_word(&sprite[py * width + (width - 1 - px)]);
-            if (pixel != SPRITE_TRANSPARENT_COLOR) {
+            if (pixel != SPRITE_TRANSPARENT_COLOR)
+            {
                 // Manual byte swap needed for drawPixel
                 tft.drawPixel(x + px, y + py, (pixel >> 8) | (pixel << 8));
             }
@@ -531,7 +565,8 @@ void gfxDrawSpriteTransparentFlip(const uint16_t *sprite, int16_t x, int16_t y,
 // COLOR TEST
 // ============================================================================
 
-void gfxDrawColorTest() {
+void gfxDrawColorTest()
+{
     tft.fillScreen(COLOR_BLACK);
 
     // Draw labels
@@ -545,7 +580,7 @@ void gfxDrawColorTest() {
     yPos += 30;
 
     // REFERENCE (fillRect - known good)
-    tft.setCursor(5, yPos); 
+    tft.setCursor(5, yPos);
     tft.print("Ref (fillRect):");
     yPos += 20;
     // Draw 10px wide blocks to match 50x50 sprite columns
@@ -554,35 +589,35 @@ void gfxDrawColorTest() {
     tft.fillRect(30, yPos, 10, 50, 0x001F); // Blue
     tft.fillRect(40, yPos, 10, 50, 0xFFFF); // White
     tft.fillRect(50, yPos, 10, 50, 0x0000); // Black (Invisible on black bg, but consistent)
-    
+
     // Draw outline around reference
-    tft.drawRect(9, yPos-1, 52, 52, COLOR_WHITE);
-    
+    tft.drawRect(9, yPos - 1, 52, 52, COLOR_WHITE);
+
     yPos += 60;
 
     // TEST (pushImage - what we are testing)
     tft.setCursor(5, yPos);
     tft.print("Test (pushImage):");
     yPos += 20;
-    
+
     // IMPORTANT: Enable byte swapping for PROGMEM images
     // This solves the issue where colors are garbled (endian mismatch)
-    tft.setSwapBytes(true); 
-    
+    tft.setSwapBytes(true);
+
     // Push the 50x50 sprite directly
-    tft.pushImage(10, yPos, 
-                  SPRITE_TEST_COLORS_WIDTH, 
-                  SPRITE_TEST_COLORS_HEIGHT, 
+    tft.pushImage(10, yPos,
+                  SPRITE_TEST_COLORS_WIDTH,
+                  SPRITE_TEST_COLORS_HEIGHT,
                   sprite_test_colors);
-                  
+
     // Reset swap bytes to default just in case (though we likely want it true everywhere)
-    // tft.setSwapBytes(false); 
+    // tft.setSwapBytes(false);
 
     // Draw outline around test
-    tft.drawRect(9, yPos-1, 52, 52, COLOR_WHITE);
-    
+    tft.drawRect(9, yPos - 1, 52, 52, COLOR_WHITE);
+
     yPos += 60;
-    
+
     // Legend
     tft.setTextSize(1);
     tft.setCursor(5, yPos);
