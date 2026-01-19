@@ -4,10 +4,10 @@
 
 ## Current Status
 
-**Phase:** Phase 1 - Sprite Infrastructure (Executing)
+**Phase:** Phase 2 - Core Game Sprites (Not Started)
 **Milestone:** Phase 2 - Sprite-Based Rendering
-**Activity:** Plan 1.1 complete, moving to Plan 1.2 (Background Strategy)
-**Next Step:** Run `/execute 1.2` to decide and implement background rendering
+**Activity:** Phase 1 complete (Infrastructure + Tiled Background)
+**Next Step:** Run `/plan 2` to break down Phase 2 (Fish, Food, Coin sprites)
 
 ## Last Session Summary
 
