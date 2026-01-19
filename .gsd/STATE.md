@@ -4,10 +4,10 @@
 
 ## Current Status
 
-**Phase:** Phase 2 - Core Game Sprites (Not Started)
+**Phase:** Phase 2 - Core Game Sprites (Executing)
 **Milestone:** Phase 2 - Sprite-Based Rendering
-**Activity:** Phase 1 complete (Infrastructure + Tiled Background)
-**Next Step:** Run `/plan 2` to break down Phase 2 (Fish, Food, Coin sprites)
+**Activity:** Plan 2.1 complete. Moving to Plan 2.2 (Integration).
+**Next Step:** Check sprite dimensions and render sprites in graphics.cpp
 
 ## Last Session Summary
 

@@ -19,6 +19,9 @@ struct Coin;
 // Initialize display
 void gfxInit();
 
+// Load game sprites from SD card
+void gfxLoadAssets();
+
 // Clear screen / fill with color
 void gfxClear(uint16_t color = COLOR_BLACK);
 

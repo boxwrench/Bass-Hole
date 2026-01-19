@@ -7,13 +7,14 @@
 // Global game data
 GameData game;
 
-void gameStateInit() {
+void gameStateInit()
+{
     game.state = STATE_BOOT;
     game.previousState = STATE_BOOT;
     game.coins = STARTING_COINS;
     game.highScore = 0;
     game.currentLevel = 1;
-    game.fishUnlocked = 0x01;  // Only rainbow trout unlocked initially
+    game.fishUnlocked = 0x1F; // DEBUG: All fish unlocked for testing
 
     game.totalCoinsEarned = 0;
     game.fishFed = 0;
@@ -29,12 +30,14 @@ void gameStateInit() {
     game.tutorialComplete = false;
 
     // Try to load saved game
-    if (sdIsReady() && gameSaveExists()) {
+    if (sdIsReady() && gameSaveExists())
+    {
         gameLoad();
     }
 }
 
-void gameStateChange(GameState newState) {
+void gameStateChange(GameState newState)
+{
     game.previousState = game.state;
     game.state = newState;
 
@@ -46,17 +49,20 @@ void gameStateChange(GameState newState) {
 #endif
 }
 
-void gameStateUpdate() {
+void gameStateUpdate()
+{
     unsigned long now = millis();
     unsigned long deltaTime = now - game.lastUpdate;
     game.lastUpdate = now;
 
-    if (!game.isPaused && game.state == STATE_PLAYING) {
+    if (!game.isPaused && game.state == STATE_PLAYING)
+    {
         game.playTime += deltaTime;
     }
 }
 
-void gameStateReset() {
+void gameStateReset()
+{
     game.coins = STARTING_COINS;
     game.currentLevel = 1;
     game.playTime = 0;
@@ -77,9 +83,10 @@ void gameStateReset() {
 // SAVE/LOAD
 // ============================================================================
 
-#define SAVE_MAGIC 0xBA55  // "BASS"
+#define SAVE_MAGIC 0xBA55 // "BASS"
 
-struct SaveData {
+struct SaveData
+{
     uint16_t magic;
     uint32_t coins;
     uint32_t highScore;
@@ -91,18 +98,22 @@ struct SaveData {
     uint8_t checksum;
 };
 
-uint8_t calculateChecksum(const SaveData* data) {
+uint8_t calculateChecksum(const SaveData *data)
+{
     uint8_t sum = 0;
-    const uint8_t* bytes = (const uint8_t*)data;
+    const uint8_t *bytes = (const uint8_t *)data;
     // Sum all bytes except checksum itself
-    for (size_t i = 0; i < sizeof(SaveData) - 1; i++) {
+    for (size_t i = 0; i < sizeof(SaveData) - 1; i++)
+    {
         sum ^= bytes[i];
     }
     return sum;
 }
 
-bool gameSave() {
-    if (!sdIsReady()) return false;
+bool gameSave()
+{
+    if (!sdIsReady())
+        return false;
 
     SaveData data;
     data.magic = SAVE_MAGIC;
@@ -118,23 +129,28 @@ bool gameSave() {
     return sdSaveGame(&data, sizeof(SaveData));
 }
 
-bool gameLoad() {
-    if (!sdIsReady()) return false;
+bool gameLoad()
+{
+    if (!sdIsReady())
+        return false;
 
     SaveData data;
-    if (!sdLoadGame(&data, sizeof(SaveData))) {
+    if (!sdLoadGame(&data, sizeof(SaveData)))
+    {
         return false;
     }
 
     // Validate save
-    if (data.magic != SAVE_MAGIC) {
+    if (data.magic != SAVE_MAGIC)
+    {
 #if DEBUG_SERIAL
         Serial.println("Save: Invalid magic number");
 #endif
         return false;
     }
 
-    if (data.checksum != calculateChecksum(&data)) {
+    if (data.checksum != calculateChecksum(&data))
+    {
 #if DEBUG_SERIAL
         Serial.println("Save: Checksum mismatch");
 #endif
@@ -156,6 +172,7 @@ bool gameLoad() {
     return true;
 }
 
-bool gameSaveExists() {
+bool gameSaveExists()
+{
     return sdFileExists("/save/game.dat");
 }

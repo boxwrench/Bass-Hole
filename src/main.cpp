@@ -70,6 +70,9 @@ void setup()
   // Initialize display second (gives visual feedback)
   gfxInit();
 
+  // Load Sprites
+  gfxLoadAssets();
+
   gfxClear(COLOR_BLACK);
   gfxDrawText("BASS HOLE", 60, 140, COLOR_WHITE, 3);
   gfxDrawText("Loading...", 80, 180, COLOR_WATER_LIGHT, 1);
@@ -298,8 +301,21 @@ void handlePlayingInput(TouchPoint tap)
       if (game.coins >= FISH_COST_BASIC)
       {
         game.coins -= FISH_COST_BASIC;
-        // Spawn a new fish at the top center of the tank
-        fishSpawn(FISH_RAINBOW_TROUT, SCREEN_WIDTH / 2, TANK_TOP + 20);
+
+        // Cycle through unlocked fish
+        static uint8_t nextFishToSpawn = 0;
+
+        // Simple loop to find next unlocked fish
+        // (For Phase 2 we unlocked all 0x1F so this just cycles 0-4)
+        nextFishToSpawn = (nextFishToSpawn + 1) % FISH_SPECIES_COUNT;
+
+        // Spawn the selected fish
+        fishSpawn((FishSpecies)nextFishToSpawn, SCREEN_WIDTH / 2, TANK_TOP + 20);
+
+#if DEBUG_SERIAL
+        Serial.print("Spawned Species ID: ");
+        Serial.println(nextFishToSpawn);
+#endif
 #if DEBUG_SERIAL
         Serial.print("Bought fish! Remaining coins: $");
         Serial.println(game.coins);

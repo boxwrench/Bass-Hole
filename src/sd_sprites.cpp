@@ -122,3 +122,26 @@ void spriteDrawTransparent(Sprite *sprite, int16_t x, int16_t y, uint16_t transp
         }
     }
 }
+
+void spriteDrawTransparentFlip(Sprite *sprite, int16_t x, int16_t y, uint16_t transparentColor)
+{
+    if (!sprite || !sprite->data)
+        return;
+
+    // Pixel-by-pixel rendering with X-flip
+    for (int16_t py = 0; py < sprite->height; py++)
+    {
+        for (int16_t px = 0; px < sprite->width; px++)
+        {
+            // Get pixel from UNFLIPPED data
+            uint16_t pixel = sprite->data[py * sprite->width + px];
+            if (pixel != transparentColor)
+            {
+                // Swap bytes
+                uint16_t swapped = (pixel >> 8) | (pixel << 8);
+                // Draw AT FLIPPED POSITION (width - 1 - px)
+                tft.drawPixel(x + (sprite->width - 1 - px), y + py, swapped);
+            }
+        }
+    }
+}

@@ -13,6 +13,31 @@
 // Cached background tile from SD card
 static Sprite *bgTile = nullptr;
 
+// Cached Entity Sprites
+static Sprite *sprFish[FISH_SPECIES_COUNT];
+static Sprite *sprFood = nullptr;
+static Sprite *sprCoin = nullptr;
+
+void gfxLoadAssets()
+{
+#if USE_SPRITES
+    // Load Fish
+    sprFish[FISH_RAINBOW_TROUT] = spriteLoad("/sprites/fish/fish_r_trout.raw", 48, 20);
+    sprFish[FISH_BLUEGILL] = spriteLoad("/sprites/fish/fish_bluegill.raw", 48, 32);
+    sprFish[FISH_SMALLMOUTH_BASS] = spriteLoad("/sprites/fish/fish_smallmouth.raw", 48, 24);
+    sprFish[FISH_CHANNEL_CATFISH] = spriteLoad("/sprites/fish/fish_channel_cat.raw", 48, 18);
+    sprFish[FISH_LARGEMOUTH_BASS] = spriteLoad("/sprites/fish/fish_l_bass.raw", 48, 22);
+
+    // Load Items
+    sprFood = spriteLoad("/sprites/ui/ui_pellet.raw", 16, 16);
+    sprCoin = spriteLoad("/sprites/ui/ui_coin_gold.raw", 16, 16);
+
+#if DEBUG_SERIAL
+    Serial.println("Assets loaded from SD Card");
+#endif
+#endif
+}
+
 // ============================================================================
 // DISPLAY CONFIGURATION (TZT ESP32 CYD 2.4" - ILI9341)
 // ============================================================================
@@ -180,29 +205,38 @@ void gfxDrawFish(Fish *fish)
 
 #if USE_SPRITES
     // Sprite-based rendering
-    // Sprite-based rendering
-    const uint16_t *sprite = sprite_fish_r_trout;
-    int16_t spriteW = SPRITE_FISH_R_TROUT_WIDTH;
-    int16_t spriteH = SPRITE_FISH_R_TROUT_HEIGHT;
+    Sprite *sprite = sprFish[fish->species];
+    if (!sprite)
+        return; // Fallback or skip if not loaded
+
+    // Scale calculation (optional, for Phase 3 polish, but helpful now)
+    // For now, just render at 1x scale
 
     // Calculate position (center sprite on fish position)
-    int16_t x = (int16_t)fish->x - spriteW / 2;
-    int16_t y = (int16_t)fish->y - spriteH / 2;
+    int16_t x = (int16_t)fish->x - sprite->width / 2;
+    int16_t y = (int16_t)fish->y - sprite->height / 2;
 
-    // Draw with transparency, flip if facing right (source sprite faces left)
+    // Draw with transparency
+    // Assumption: Original sprites face LEFT or RIGHT?
+    // Trout/Bass sprites usually face LEFT in pixel art packs.
+    // Let's assume LEFT is default.
+    // If fish->facingRight is true, we FLIP.
+    // If fish -> facingRight is true, we want it to face right.
+    // IF default is LEFT, then Flip -> Right.
+    // Let's test. If they swim backwards, swap this logic.
     if (fish->facingRight)
     {
-        gfxDrawSpriteTransparentFlip(sprite, x, y, spriteW, spriteH);
+        spriteDrawTransparentFlip(sprite, x, y);
     }
     else
     {
-        gfxDrawSpriteTransparent(sprite, x, y, spriteW, spriteH);
+        spriteDrawTransparent(sprite, x, y);
     }
 
     // Hunger indicator (red outline when hungry)
     if (fishIsHungry(fish))
     {
-        tft.drawRect(x - 1, y - 1, spriteW + 2, spriteH + 2, COLOR_UI_RED);
+        tft.drawRect(x - 1, y - 1, sprite->width + 2, sprite->height + 2, COLOR_UI_RED);
     }
 
 #else
@@ -367,8 +401,22 @@ void gfxDrawFood(Food *food)
     if (!food || !food->active)
         return;
 
+#if USE_SPRITES
+    if (sprFood)
+    {
+        int16_t x = (int16_t)food->x - sprFood->width / 2;
+        int16_t y = (int16_t)food->y - sprFood->height / 2;
+        spriteDrawTransparent(sprFood, x, y);
+    }
+    else
+    {
+        // Fallback
+        tft.fillCircle((int16_t)food->x, (int16_t)food->y, FOOD_SIZE, COLOR_FOOD_BROWN);
+    }
+#else
     // Simple brown circle for food pellet
     tft.fillCircle((int16_t)food->x, (int16_t)food->y, FOOD_SIZE, COLOR_FOOD_BROWN);
+#endif
 }
 
 void gfxClearFood(Food *food)
@@ -378,6 +426,10 @@ void gfxClearFood(Food *food)
 
     // Clear rect around circle
     int16_t r = FOOD_SIZE + 2; // Padding
+#if USE_SPRITES
+    if (sprFood)
+        r = sprFood->width / 2 + 2;
+#endif
     gfxRestoreBackground((int16_t)food->x - r, (int16_t)food->y - r, r * 2, r * 2);
 }
 
@@ -404,6 +456,18 @@ void gfxDrawCoin(Coin *coin)
 
     // Bob animation
     float displayX = coin->x + sinf(coin->floatOffset) * 3;
+
+#if USE_SPRITES
+    if (sprCoin)
+    {
+        // Determine offset for bobbing
+        int16_t x = (int16_t)displayX - sprCoin->width / 2;
+        int16_t y = (int16_t)coin->y - sprCoin->height / 2;
+        spriteDrawTransparent(sprCoin, x, y);
+        return;
+    }
+    // Fallthrough to legacy
+#endif
 
     // Coin size based on value
     int16_t size = COIN_SIZE + (coin->value > 3 ? 2 : 0);
@@ -438,6 +502,10 @@ void gfxClearCoin(Coin *coin)
     // Coins animate (bob left/right) and have variable size
     // Max size is roughly 10px radius + 3px bob + padding
     int16_t r = 16;
+#if USE_SPRITES
+    if (sprCoin)
+        r = sprCoin->width / 2 + 5; // Extra padding for bob
+#endif
     gfxRestoreBackground((int16_t)coin->x - r, (int16_t)coin->y - r, r * 2, r * 2);
 }
 

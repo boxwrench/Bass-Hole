@@ -56,4 +56,14 @@ void spriteDraw(Sprite *sprite, int16_t x, int16_t y);
  */
 void spriteDrawTransparent(Sprite *sprite, int16_t x, int16_t y, uint16_t transparentColor = 0xF81F);
 
+/**
+ * @brief Draw a sprite with transparency, horizontally flipped
+ *
+ * @param sprite Pointer to the sprite
+ * @param x X coordinate (top-left)
+ * @param y Y coordinate (top-left)
+ * @param transparentColor RGB565 color to skip
+ */
+void spriteDrawTransparentFlip(Sprite *sprite, int16_t x, int16_t y, uint16_t transparentColor = 0xF81F);
+
 #endif // SD_SPRITES_H
