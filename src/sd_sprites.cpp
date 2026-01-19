@@ -1,4 +1,4 @@
-#include "sprites.h"
+#include "sd_sprites.h"
 #include "sdcard.h"
 #include "graphics.h"
 #include "config.h"

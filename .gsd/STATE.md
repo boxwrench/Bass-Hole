@@ -4,10 +4,10 @@
 
 ## Current Status
 
-**Phase:** Phase 1 - Sprite Infrastructure (Planned, Not Started)
+**Phase:** Phase 1 - Sprite Infrastructure (Executing)
 **Milestone:** Phase 2 - Sprite-Based Rendering
-**Activity:** Phase 1 planning complete, ready for execution
-**Next Step:** Run `/execute 1.1` to implement sprite loading infrastructure
+**Activity:** Plan 1.1 complete, moving to Plan 1.2 (Background Strategy)
+**Next Step:** Run `/execute 1.2` to decide and implement background rendering
 
 ## Last Session Summary
 

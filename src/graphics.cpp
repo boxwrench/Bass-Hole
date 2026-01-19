@@ -8,6 +8,10 @@
 #include <TFT_eSPI.h>
 #include <math.h>
 #include <string.h>
+#include "sd_sprites.h"
+
+// Cached background tile from SD card
+static Sprite *bgTile = nullptr;
 
 // ============================================================================
 // DISPLAY CONFIGURATION (TZT ESP32 CYD 2.4" - ILI9341)
@@ -120,10 +124,41 @@ void gfxEndFrame()
 void gfxDrawTank()
 {
 #if USE_BACKGROUND_SPRITE
-    // Draw background sprite (240x240, fits tank area perfectly)
-    // Using delta - has clear blue sky, green vegetation, blue water
-    gfxDrawSprite(sprite_bg_delta, TANK_LEFT, TANK_TOP,
-                  SPRITE_BG_DELTA_WIDTH, SPRITE_BG_DELTA_HEIGHT);
+    // Ensure background tile is loaded
+    if (!bgTile)
+    {
+        bgTile = spriteLoad("/backgrounds/water.raw", 32, 32);
+    }
+
+    if (bgTile)
+    {
+        // Tiled background rendering (Option A)
+        for (int16_t y = TANK_TOP; y < TANK_BOTTOM; y += 32)
+        {
+            for (int16_t x = TANK_LEFT; x < TANK_RIGHT; x += 32)
+            {
+                // Calculate size to draw (clipping at edges)
+                int16_t drawW = (x + 32 > TANK_RIGHT) ? (TANK_RIGHT - x) : 32;
+                int16_t drawH = (y + 32 > TANK_BOTTOM) ? (TANK_BOTTOM - y) : 32;
+
+                if (drawW == 32 && drawH == 32)
+                {
+                    spriteDraw(bgTile, x, y);
+                }
+                else
+                {
+                    // Manual clip for edges (though pushImage handles it, let's be clean)
+                    tft.setSwapBytes(true);
+                    tft.pushImage(x, y, drawW, drawH, bgTile->data);
+                }
+            }
+        }
+    }
+    else
+    {
+        // Fallback to solid color if SD load fails
+        tft.fillRect(TANK_LEFT, TANK_TOP, TANK_WIDTH, TANK_HEIGHT, COLOR_WATER_MID);
+    }
 #else
     // Draw water gradient (simplified - just solid colors for Phase 1)
     // Top of tank - lighter blue
@@ -238,6 +273,9 @@ void gfxDrawAllFish()
 void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h)
 {
 #if USE_BACKGROUND_SPRITE
+    if (!bgTile)
+        return;
+
     // Clip to tank area
     if (x < TANK_LEFT)
     {
@@ -249,30 +287,41 @@ void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h)
         h -= (TANK_TOP - y);
         y = TANK_TOP;
     }
-
-    // Bounds check
-    if (w <= 0 || h <= 0)
-        return;
-
-    // Calculate offsets into background sprite
-    int16_t bgX = x - TANK_LEFT;
-    int16_t bgY = y - TANK_TOP;
-
-    // Bounds check for sprite source
-    if (bgX + w > SPRITE_BG_DELTA_WIDTH)
-        w = SPRITE_BG_DELTA_WIDTH - bgX;
-    if (bgY + h > SPRITE_BG_DELTA_HEIGHT)
-        h = SPRITE_BG_DELTA_HEIGHT - bgY;
+    if (x + w > TANK_RIGHT)
+        w = TANK_RIGHT - x;
+    if (y + h > TANK_BOTTOM)
+        h = TANK_BOTTOM - y;
 
     if (w <= 0 || h <= 0)
         return;
 
-    // Draw background chunk line-by-line
-    // We cannot push a rect from the large sprite directly as it's not contiguous
-    for (int16_t row = 0; row < h; row++)
+    // Tiled restoration
+    tft.setSwapBytes(true);
+    for (int16_t py = 0; py < h; py++)
     {
-        int32_t offset = (bgY + row) * SPRITE_BG_DELTA_WIDTH + bgX;
-        tft.pushImage(x, y + row, w, 1, &sprite_bg_delta[offset]);
+        int16_t screenY = y + py;
+        int16_t tileY = (screenY - TANK_TOP) % 32;
+        if (tileY < 0)
+            tileY += 32;
+
+        int16_t currentX = x;
+        int16_t remainingW = w;
+
+        while (remainingW > 0)
+        {
+            int16_t tileX = (currentX - TANK_LEFT) % 32;
+            if (tileX < 0)
+                tileX += 32;
+
+            int16_t segmentW = 32 - tileX;
+            if (segmentW > remainingW)
+                segmentW = remainingW;
+
+            tft.pushImage(currentX, screenY, segmentW, 1, &bgTile->data[tileY * 32 + tileX]);
+
+            currentX += segmentW;
+            remainingW -= segmentW;
+        }
     }
 #else
     // Fallback: fill rect with blue

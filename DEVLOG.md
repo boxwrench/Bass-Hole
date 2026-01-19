@@ -32,6 +32,44 @@ Key issue being solved: Display color handling (sprites vs primitives)
 
 ## Session Log
 
+### 2026-01-19 - Sprite Color Resolution (VERIFIED ON HARDWARE)
+
+**What was done:**
+- Ran comprehensive color diagnostic tests on ESP32-2432S028R hardware
+- Identified root cause of washed-out sprite colors: **default gamma curve**
+- Established verified "Ground Truth" configuration for Bass-Hole project
+- Tested all 4 gamma curves (0x01, 0x02, 0x04, 0x08) on actual hardware
+
+**CRITICAL DISCOVERY:**
+The washed-out sprite issue was **NOT** a byte-swap or RGB-order problem—it was the default gamma curve being incompatible with the specific panel variant used in the CYD.
+
+**Verified Configuration:**
+- Driver: `ILI9341_2_DRIVER` (fixes static/corruption)
+- **Gamma: 0x01** (CRITICAL for vibrant sprite colors)
+- Inversion: `invertDisplay(true)` (required with _2_DRIVER variant)
+- Rotation: `1` (landscape, USB down)
+- Sprites: RGB565 Little-Endian with `setSwapBytes(true)`
+
+**Why this matters:**
+- `fillRect()` and UI elements look fine with default gamma
+- `pushImage()` sprites appear washed out/desaturated with default gamma
+- This made diagnosis extremely difficult—colors weren't "wrong," just muted
+- Gamma 0x01 restores full vibrancy to sprites
+
+**Asset Pipeline Update:**
+- Use `tools/png_to_rgb565.py` (RGB mode, NOT --bgr)
+- Firmware: `setSwapBytes(true)` after `tft.init()`
+- Result: Accurate colors with crisp outlines
+
+**Next steps:**
+- Update Bass-Hole graphics.cpp with gamma setting
+- Regenerate all sprite assets using verified RGB565 pipeline
+- Test on hardware to confirm vibrant colors
+
+**Blocking issues:** None
+
+---
+
 ### 2026-01-15 - Pivot to Hardware-First Approach
 
 **What was done:**

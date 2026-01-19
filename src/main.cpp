@@ -21,7 +21,7 @@
 #include "graphics.h"
 #include "sdcard.h"
 #include "touch.h"
-#include "sprites.h"
+#include "sd_sprites.h"
 #include <Arduino.h>
 
 // Forward declarations for ESP-IDF/C++ strictness

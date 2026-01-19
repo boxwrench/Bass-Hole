@@ -78,6 +78,23 @@ Each decision follows this structure:
 
 ---
 
-## Future Decisions
+---
 
-*Decisions for Phase 2 sprite implementation will be recorded here as they are made.*
+## ADR-005: Background Rendering Strategy - Texture Tiling
+**Date:** 2026-01-19
+**Status:** Accepted
+
+**Context:** Full-resolution background sprites (240x320) in RGB565 format take up 150KB. Loading these from the SD card is relatively slow and creates a performance bottleneck during state transitions and dirty rect restoration.
+
+**Decision:** We will use **Texture Tiling** for the background environment.
+
+**Consequences:**
+- ✅ **Performance:** A single 32x32 water tile (2KB) is loaded into RAM once when entering the playing state. Tiling this across the 240x240 tank area is extremely fast and allows for efficient dirty rect restoration without SD card reads during the game loop.
+- ✅ **Visuals:** Uses the "Grass-Sand-Water TileSet" by TheWaffle (OpenGameArt).
+- ✅ **RAM usage:** Consumes only 2KB of RAM for the tile data.
+- ✅ **Scalability:** Future background variety (reeds, rocks, sand) can be added by loading additional small tiles.
+- ℹ️ Implementation uses `sd_sprites.h` loader.
+
+---
+
+## Future Decisions

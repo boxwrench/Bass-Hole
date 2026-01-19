@@ -1,5 +1,5 @@
-#ifndef SPRITES_H
-#define SPRITES_H
+#ifndef SD_SPRITES_H
+#define SD_SPRITES_H
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -56,4 +56,4 @@ void spriteDraw(Sprite *sprite, int16_t x, int16_t y);
  */
 void spriteDrawTransparent(Sprite *sprite, int16_t x, int16_t y, uint16_t transparentColor = 0xF81F);
 
-#endif // SPRITES_H
+#endif // SD_SPRITES_H
