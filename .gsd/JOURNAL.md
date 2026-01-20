@@ -1,72 +1,43 @@
-# Journal
+# Bass-Hole Development Journal
 
-> Development journal for Bass-Hole
+## Session: 2026-01-20 10:40
 
-## Format
-Each entry records:
-- Date
-- What was accomplished
-- Key insights
-- Blockers encountered
-- Next steps
+### Objective
+Complete Landscape Mode hardware configuration and verify stable gameplay on ESP32 CYD.
 
----
+### Accomplished
+- ✅ Identified and fixed Touch SPI Bus issue (HSPI vs VSPI mismatch)
+- ✅ Resolved Touch Axis Swap (X/Y anti-diagonal inversion)
+- ✅ Implemented 3-Zone Gradient background restore (Light/Mid/Deep + Sand)
+- ✅ Verified 30+ FPS stable performance
+- ✅ Verified accurate touch input across all screen zones
+- ✅ Created comprehensive reference documentation:
+  - `LANDSCAPE_CONFIG_LOCKED.md` - Complete hardware configuration
+  - Updated `LANDSCAPE_PLAN.md` - Implementation plan with completion status
+  - Updated `README.md` - Hardware requirements section
 
-## 2026-01-19 - GSD Project Initialization
+### Verification
+- [x] Display rendered correctly (320x240 Landscape, correct colors)
+- [x] Touch input accurate (no phantom touches, proper mapping)
+- [x] No smearing/ghosting artifacts
+- [x] Stable performance (30-31 FPS)
+- [x] Geometric rendering fallback functional
+- [ ] Sprite loading from SD card (deferred - geometric fallback working)
 
-**Session Goal:** Initialize GSD structure for Phase 2 sprite implementation
+### Paused Because
+Natural completion point - Hardware configuration is fully working and documented. Ready to move to next phase (sprite loading or game content development).
 
-**Accomplished:**
-- ✅ Ran `/map` to analyze existing codebase
-- ✅ Created `.gsd/ARCHITECTURE.md` (8 core components documented)
-- ✅ Created `.gsd/STACK.md` (ESP32 + PlatformIO + TFT_eSPI)
-- ✅ Created `.gsd/SPEC.md` (Phase 2 sprite implementation scope)
-- ✅ Created `.gsd/ROADMAP.md` (5 phases: Infrastructure → Optimization)
-- ✅ Initialized GSD documentation structure
+### Handoff Notes
+**The hardware is production-ready.** The game is fully playable with geometric rendering. All critical configuration is documented in `LANDSCAPE_CONFIG_LOCKED.md`.
 
-**Key Insights:**
-- Phase 1 is complete and hardware-verified
-- CYD tester project validated sprite loading approach (RGB565, SD card)
-- Background sprite size is a constraint (need tiling or optimization)
-- Entity pool pattern from Phase 1 is solid foundation
-- Asset pipeline tools exist but need to be applied to real game
+**Key Technical Details:**
+1. **Touch SPI:** MUST use HSPI (pins 12,13,14,33) via `SPIClass touchSpi(HSPI)` - default SPI uses wrong pins
+2. **Touch Mapping:** X/Y axes MUST be swapped (`map(p.y, ...)` for X, `map(p.x, ...)` for Y)
+3. **Background Restore:** MUST use 3-zone gradient (not 2) to match `gfxDrawTank` layers
+4. **Rotation:** Use `tft.setRotation(1)` for Landscape, `ILI9341_2_DRIVER` forces this orientation
 
-**Blockers:**
-- None (clear path forward)
-
-**Decisions Made:**
-- Focus Phase 2 exclusively on sprite implementation (no new gameplay)
-- Defer UI sprites to optional Phase 3
-- Target ≥25 FPS (30 FPS ideal)
-
-**Next Steps:**
-- Run `/plan 1` to break down Phase 1 (Sprite Infrastructure) into detailed tasks
-- Decide background approach (tiled vs single sprite)
-- Create/source initial sprite assets (or plan asset generation)
-
----
-
-## Historical Context (Pre-GSD)
-
-### Phase 1 Development
-- Implemented core gameplay with shape-based graphics
-- Fish AI, hunger system, coin generation working
-- Touch input calibrated and functional
-- SD card save/load implemented
-- Achieved ~31 FPS on TZT CYD 2.4"
-
-### Display Configuration Research
-- Resolved color issues (BGR vs RGB)
-- Fixed SPI bus initialization order
-- Documented gamma settings and rotation
-- Created separate CYD tester project for hardware validation
-
-### Asset Pipeline Exploration
-- Built Python tools for PNG → RGB565 conversion
-- Tested dithering and color reduction
-- Validated sprite loading performance on hardware
-- Discovered background sprite size constraints
-
----
-
-*Future entries will be added as development progresses*
+**Next Session Options:**
+- Debug sprite loading from SD card (check file paths, sprite format)
+- Fine-tune touch calibration ranges if needed
+- Continue game content development (Ty Knotts dialogue, enemy fish, etc.)
+- Optimize performance with sprite-based background tiling

@@ -1,87 +1,56 @@
-# Project State
-
-> Last updated: 2026-01-19
-
-## Current Status
-
-**Phase:** Phase 2 - Core Game Sprites (Executing)
-**Milestone:** Phase 2 - Sprite-Based Rendering
-**Activity:** Plan 2.1 complete. Moving to Plan 2.2 (Integration).
-**Next Step:** Check sprite dimensions and render sprites in graphics.cpp
+## Current Position
+- **Phase**: Hardware Verification - COMPLETED ✅
+- **Task**: Landscape Mode Conversion - COMPLETED ✅
+- **Status**: Paused at 2026-01-20 10:40:19
 
 ## Last Session Summary
+Successfully completed the Landscape Mode hardware configuration for Bass-Hole on ESP32 CYD:
+1. Fixed Touch SPI Bus issue (HSPI vs VSPI)
+2. Resolved Touch Axis Swap (anti-diagonal inversion)
+3. Implemented 3-Zone Gradient background restore
+4. Verified stable 30+ FPS with accurate touch input
+5. Created comprehensive reference documentation
 
-**GSD Project Initialization Complete** - Bass-Hole Phase 2 (Sprite Implementation):
+## In-Progress Work
+**All work committed and stable** - No uncommitted changes
 
-**Codebase Analysis:**
-- **8 core components** identified (main, fish, food, coins, touch, graphics, sdcard, game_state)
-- **3 production dependencies** (TFT_eSPI, XPT2046_Touchscreen, SD)
-- **Asset pipeline** with 5 Python tools documented
-- **4 ADRs** captured from Phase 1 learnings
+Files modified in this session:
+- `src/touch.cpp` - HSPI initialization, X/Y axis swap
+- `src/graphics.cpp` - 3-zone gradient restore logic
+- `src/main.cpp` - Visual touch debug (white circle)
+- `include/config.h` - Landscape dimensions (320x240)
+- `README.md` - Hardware requirements updated
 
-**Project Scope Defined:**
-- **Goal:** Replace shape-based graphics with sprites while maintaining Phase 1 gameplay
-- **Constraint:** Background sprite size issue (need tiling or optimization)
-- **Foundation:** CYD tester validated SD card sprite loading (RGB565, BGR)
-- **Success Criteria:** ≥25 FPS with all sprites rendered
+Tests status: **Passing** (Hardware verified on device)
 
-**Roadmap Created:**
-- **5 Phases:** Infrastructure → Core Sprites → UI (optional) → Docs → Optimization
-- **Current:** Phase 1 (Sprite Infrastructure) - Not Started
+## Blockers
+**NONE** - Hardware configuration is fully working and locked.
 
-## Files Created This Session
+## Context Dump
 
-- `.gsd/ARCHITECTURE.md` - System architecture documentation
-- `.gsd/STACK.md` - Technology stack inventory
-- `.gsd/SPEC.md` - Phase 2 sprite implementation specification
-- `.gsd/ROADMAP.md` - 5-phase execution plan
-- `.gsd/DECISIONS.md` - Architectural Decision Records (4 ADRs)
-- `.gsd/JOURNAL.md` - Development journal (initial entry)
-- `.gsd/TODO.md` - Backlog and quick captures
-- `.gsd/STATE.md` - This file
-- `.gsd/phases/` - Directory for phase plans
+### Decisions Made
+- **Landscape vs Portrait**: Adopted Landscape (320x240) because ILI9341_2_DRIVER natively supports this orientation on the hardware
+- **Geometric Fallback**: Kept geometric rendering working as primary (sprites on SD card not yet debugged, but fallback is stable)
+- **Touch Mapping**: X/Y axes swapped because hardware presents anti-diagonal inversion pattern in Landscape mode
+- **Gradient Zones**: 3 water layers (Light/Mid/Deep) + Sand to match gfxDrawTank exactly
 
-## What Was Accomplished
+### Approaches Tried
+- **Portrait Rotations (0,2,3)**: Failed - ILI9341_2_DRIVER forces Landscape
+- **Touch SPI Default**: Failed - Used VSPI (18,19,23) instead of HSPI (12,13,14), causing 8191 phantom reads
+- **2-Zone Gradient**: Partial - Created "Mid Blue Square" artifacts in top band
+- **3-Zone Gradient**: Success - Clean rendering across all water layers
 
-✅ Analyzed project structure (src/, include/, tools/, docs/)
-✅ Identified entity pool pattern for memory management  
-✅ Mapped game loop and data flow  
-✅ Documented SPI bus initialization order (critical finding)
-✅ Inventoried asset conversion pipeline  
-✅ Discovered separate hardware test tool  
-✅ Catalogued technical debt and future phases  
+### Current Hypothesis
+Sprite loading from SD card is the next step, but NOT blocking gameplay. Geometric rendering is fully functional and visually clean.
 
-## Key Insights
+### Files of Interest
+- `c:\GitHub\Bass-Hole\src\touch.cpp` (lines 5-48): HSPI initialization and X/Y swap logic
+- `c:\GitHub\Bass-Hole\src\graphics.cpp` (lines 354-390): 3-zone gradient restore logic
+- `c:\GitHub\Bass-Hole\include\config.h` (lines 8-24): Hardware pin definitions and screen dimensions
+- `LANDSCAPE_CONFIG_LOCKED.md`: Complete reference configuration for future projects
 
-1. **Brownfield Project:** Active development with Phase 1 hardware verified
-2. **Educational Goal:** Designed as both game and ESP32 CYD reference
-3. **Memory Efficiency:** Entity pool pattern (no dynamic allocation)
-4. **Critical Config:** Display color order and touch init sequence well-documented
-5. **Asset Workflow:** PNG → dithering → RGB565 conversion pipeline established
-
-## Next Actions
-
-**Immediate (Continue `/new-project`):**
-1. Return to `/new-project` workflow Phase 3: Deep Questioning
-2. Gather project vision and goals from user
-3. Create `.gsd/SPEC.md` with finalized specification
-4. Generate `.gsd/ROADMAP.md` with executable phases
-5. Initialize remaining GSD files (DECISIONS.md, JOURNAL.md, TODO.md)
-
-**After Initialization:**
-- Run `/plan 1` to create detailed Phase 1 execution plan
-- Or run `/progress` to see current roadmap position
-
-## Project Context
-
-**Repository:** github.com/boxwrench/Bass-Hole  
-**Codebase Size:** 20+ source files (C++/Python)  
-**Documentation:** Extensive (11 docs in docs/ directory)  
-**Development History:** 20 previous conversations (display config, sprite rendering, audio debugging, etc.)
-
-## Notes
-
-- Project has existing `docs/ARCHITECTURE.md` (game-specific)
-- GSD `ARCHITECTURE.md` focuses on development/planning context
-- `managed_components/` contains 2440 unused ESP-IDF files (cleanup opportunity)
-- No formal unit tests; relies on hardware validation + manual testing
+## Next Steps
+1. **Debug SD Card Sprite Loading** - Geometric fallback works, but sprites would improve visuals
+2. **Optional Touch Calibration** - Current ranges (600-3600) are safe defaults, could be fine-tuned
+3. **Game Content Development** - Hardware is stable, can focus on gameplay features
+4. **Performance Optimization** - Consider sprite-based background tiling if needed
