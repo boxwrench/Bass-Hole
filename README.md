@@ -52,11 +52,16 @@ Whether you want to play the game, learn ESP32 game development, or fork it to b
 | Component | Specification |
 |-----------|---------------|
 | Board | ESP32 CYD 2.4" (TZT/Sunton) |
-| Display | ILI9341 240x320 LCD |
+| Display | ILI9341 320x240 LCD (Landscape) |
 | Touch | XPT2046 resistive |
 | Storage | MicroSD card (FAT32) |
 
-**Tested on:** TZT ESP32 LVGL WiFi & Bluetooth 2.4" LCD TFT Module
+**Tested & Verified on:** TZT ESP32 LVGL WiFi & Bluetooth 2.4" LCD TFT Module  
+**Display Mode:** Landscape (320x240, USB on left, verified 2026-01-20)  
+**Touch:** HSPI bus, X/Y swapped mapping  
+**Performance:** 30+ FPS stable
+
+> ⚙️ **Configuration Reference:** See `LANDSCAPE_CONFIG_LOCKED.md` in artifacts directory for complete hardware setup.
 
 Other 2.4" CYD variants should work with minor pin adjustments. See [docs/HARDWARE.md](docs/HARDWARE.md) for pinout details.
 

@@ -70,14 +70,11 @@ void setup()
   // Initialize display second (gives visual feedback)
   gfxInit();
 
-  // Load Sprites
-  gfxLoadAssets();
-
   gfxClear(COLOR_BLACK);
   gfxDrawText("BASS HOLE", 60, 140, COLOR_WHITE, 3);
   gfxDrawText("Loading...", 80, 180, COLOR_WATER_LIGHT, 1);
 
-  // Initialize SD card
+  // Initialize SD card FIRST (before loading assets!)
   bool sdOk = sdInit();
   spriteInit();
 
@@ -85,20 +82,14 @@ void setup()
   {
     gfxDrawText("SD Card OK", 80, 200, COLOR_UI_GREEN, 1);
 
-    // Plan 1.1: Test Sprite Loading
-    // To test: place a 50x50 RGB565 file named "test_sprite.raw" on SD card
-    Sprite *testSprite = spriteLoad("/test_sprite.raw", 50, 50);
-    if (testSprite)
-    {
-      spriteDraw(testSprite, 140, 190);
-      // Stays visible during loading delay
-    }
+    // Load game assets NOW that SD is ready
+    gfxLoadAssets();
   }
   else
   {
     gfxDrawText("No SD Card", 80, 200, COLOR_UI_RED, 1);
   }
-  delay(1500); // Increased delay to see the test sprite
+  delay(1000);
 
   // Confirm touch initialized
   gfxDrawText("Touch OK", 80, 220, COLOR_UI_GREEN, 1);
@@ -217,6 +208,9 @@ void handleInput()
   TouchPoint tap = touchGetTap();
   if (!tap.valid)
     return;
+
+  // VISUAL DEBUG: Draw circle where tap occurred
+  tft.fillCircle(tap.x, tap.y, 4, TFT_WHITE);
 
   switch (game.state)
   {
