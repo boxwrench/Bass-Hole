@@ -1,8 +1,11 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#include <Arduino.h>
+#include <TFT_eSPI.h>
 #include "config.h"
+
+// TFT instance exposed for other modules (e.g. sprites)
+extern TFT_eSPI tft;
 
 // Forward declarations
 struct Fish;
@@ -15,6 +18,9 @@ struct Coin;
 
 // Initialize display
 void gfxInit();
+
+// Load game sprites from SD card
+void gfxLoadAssets();
 
 // Clear screen / fill with color
 void gfxClear(uint16_t color = COLOR_BLACK);
@@ -31,10 +37,10 @@ void gfxEndFrame();
 void gfxDrawTank();
 
 // Draw a fish
-void gfxDrawFish(Fish* fish);
+void gfxDrawFish(Fish *fish);
 
 // Clear a fish (restore background at its position)
-void gfxClearFish(Fish* fish);
+void gfxClearFish(Fish *fish);
 
 // Clear all fish (call before updating positions)
 void gfxClearAllFish();
@@ -46,10 +52,10 @@ void gfxDrawAllFish();
 void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h);
 
 // Draw a food pellet
-void gfxDrawFood(Food* food);
+void gfxDrawFood(Food *food);
 
 // Clear a food pellet
-void gfxClearFood(Food* food);
+void gfxClearFood(Food *food);
 
 // Draw all food
 void gfxDrawAllFood();
@@ -58,10 +64,10 @@ void gfxDrawAllFood();
 void gfxClearAllFood();
 
 // Draw a coin
-void gfxDrawCoin(Coin* coin);
+void gfxDrawCoin(Coin *coin);
 
 // Clear a coin
-void gfxClearCoin(Coin* coin);
+void gfxClearCoin(Coin *coin);
 
 // Draw all coins
 void gfxDrawAllCoins();
@@ -91,22 +97,22 @@ void gfxDrawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void gfxFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color);
 void gfxDrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color);
 void gfxDrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
-void gfxDrawText(const char* text, int16_t x, int16_t y, uint16_t color, uint8_t size = 1);
+void gfxDrawText(const char *text, int16_t x, int16_t y, uint16_t color, uint8_t size = 1);
 
 // ============================================================================
 // SPRITE RENDERING
 // ============================================================================
 
 // Draw sprite from PROGMEM (no transparency)
-void gfxDrawSprite(const uint16_t* sprite, int16_t x, int16_t y,
+void gfxDrawSprite(const uint16_t *sprite, int16_t x, int16_t y,
                    int16_t width, int16_t height);
 
 // Draw sprite with transparency (skips magenta 0xF81F pixels)
-void gfxDrawSpriteTransparent(const uint16_t* sprite, int16_t x, int16_t y,
-                               int16_t width, int16_t height);
+void gfxDrawSpriteTransparent(const uint16_t *sprite, int16_t x, int16_t y,
+                              int16_t width, int16_t height);
 
 // Draw sprite with transparency and horizontal flip
-void gfxDrawSpriteTransparentFlip(const uint16_t* sprite, int16_t x, int16_t y,
-                                   int16_t width, int16_t height);
+void gfxDrawSpriteTransparentFlip(const uint16_t *sprite, int16_t x, int16_t y,
+                                  int16_t width, int16_t height);
 
 #endif // GRAPHICS_H

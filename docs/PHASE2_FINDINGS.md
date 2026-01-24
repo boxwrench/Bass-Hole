@@ -1,40 +1,95 @@
 # Phase 2: Sprite Integration - Findings & Configuration
 
-**Date:** 2025-01-14
-**Hardware:** TZT ESP32 CYD 2.4" (ILI9341 + XPT2046)
+**Last Updated:** 2026-01-19  
+**Hardware:** ESP32-2432S028R (ILI9341_2_DRIVER + XPT2046)
 
-## Summary
+---
 
-Successfully integrated sprite rendering for Phase 2. Fish now display as actual sprite artwork instead of geometric shapes. Background sprite added. All touch and display issues resolved through calibration.
+## ✅ VERIFIED GROUND TRUTH (2026-01-19)
 
-## Display Configuration (CRITICAL)
+### Critical Discovery: Gamma Correction
 
-### Working Settings
+**The washed-out sprite issue was caused by the default gamma curve, NOT byte-swapping or RGB order.**
 
-```cpp
-// graphics.cpp
-tft.setRotation(0);              // Portrait, USB at bottom
-tft.invertDisplay(false);        // MUST be false for sprites
-```
-
-### Color Handling Solution
-
-With `invertDisplay(false)`:
-- ✓ **Sprites render correctly** (RGB565 data embedded in arrays)
-- ✗ **UI/text render inverted** (TFT primitives affected by inversion setting)
-
-**Solution:** Invert all color constants in `config.h`
+### Verified Display Configuration
 
 ```cpp
-// config.h - All colors pre-inverted
-#define COLOR_BLACK   0xFFFF  // XOR with 0xFFFF inverts RGB565
-#define COLOR_WHITE   0x0000
-#define COLOR_UI_GREEN 0xF81F  // Note: This is magenta value, displays as green!
+// graphics.cpp - VERIFIED WORKING
+void gfxInit() {
+    pinMode(21, OUTPUT); digitalWrite(21, HIGH);  // Backlight
+    pinMode(27, OUTPUT); digitalWrite(27, HIGH);  // Alternate backlight
+    
+    tft.init();
+    
+    // CRITICAL: Set gamma for vibrant sprite colors
+    tft.writecommand(0x26);  // Gamma Set command
+    tft.writedata(0x01);     // Gamma curve 1 (more saturated)
+    
+    // Required for ILI9341_2_DRIVER variant
+    tft.invertDisplay(true);
+    
+    // Landscape mode, USB down
+    tft.setRotation(1);
+    
+    // Required for RGB565 sprites
+    tft.setSwapBytes(true);
+}
 ```
 
-**Why this works:**
-- Sprite data contains absolute RGB565 values → renders correctly
-- TFT functions use inverted constants → cancels out to correct display
+### Verified PlatformIO Configuration
+
+```ini
+[env:bass-hole]
+platform = espressif32@6.5.0
+board = esp32dev
+framework = arduino
+
+lib_deps = 
+    bodmer/TFT_eSPI@^2.5.43
+    https://github.com/PaulStoffregen/XPT2046_Touchscreen.git
+
+build_flags = 
+    -DUSER_SETUP_LOADED=1
+    -DILI9341_2_DRIVER=1        # Fixes static/corruption
+    -DTFT_WIDTH=240
+    -DTFT_HEIGHT=320
+    -DTFT_MISO=12
+    -DTFT_MOSI=13
+    -DTFT_SCLK=14
+    -DTFT_CS=15
+    -DTFT_DC=2
+    -DTFT_RST=-1
+    -DTFT_BL=21
+    -DTFT_BACKLIGHT_ON=HIGH
+    # DO NOT USE: -DTFT_RGB_ORDER=1 (causes red/blue swap)
+    # DO NOT USE: -DUSE_HSPI_PORT=1 (unnecessary)
+    -DLOAD_GLCD=1
+    -DLOAD_FONT2=1
+    -DLOAD_FONT4=1
+    -DLOAD_FONT6=1
+    -DLOAD_FONT7=1
+    -DLOAD_FONT8=1
+    -DLOAD_GFXFF=1
+    -DSMOOTH_FONT=1
+    -DSPI_FREQUENCY=40000000
+    -DSPI_READ_FREQUENCY=20000000
+    -DSPI_TOUCH_FREQUENCY=2500000
+```
+
+### Verified Sprite Asset Pipeline
+
+**Format:** RGB565, Little-Endian  
+**Tool:** `tools/png_to_rgb565.py` (default RGB mode, NOT --bgr)  
+**Firmware:** `setSwapBytes(true)`
+
+```bash
+# Generate verified RGB565 sprite
+python tools/png_to_rgb565.py input.png output.rgb565
+```
+
+**Result:** Accurate colors with crisp outlines
+
+---
 
 ## Touch Calibration (VERIFIED)
 
@@ -59,6 +114,8 @@ int16_t mappedY = map(p.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 0, SCREEN_HEIGHT); // Y nor
 - Touch crosshairs appear exactly where tapped
 - Coins collectible
 - Buttons functional
+
+---
 
 ## Sprite Rendering
 
@@ -91,6 +148,8 @@ void gfxDrawSpriteTransparentFlip() {
 }
 ```
 
+---
+
 ## Sprite Pipeline
 
 ### 1. Resize (All Done)
@@ -102,18 +161,20 @@ python tools/resize_sprites.py
 - Backgrounds: 240×240px
 - UI: 16×16px
 
-### 2. Convert to C Arrays
+### 2. Convert to RGB565
 ```bash
-python tools/img2code.py input.png --name sprite_name --output output.h
+python tools/png_to_rgb565.py input.png output.rgb565
 ```
-- Outputs RGB565 const arrays in PROGMEM
-- Magenta (0xF81F) = transparent
+- Outputs RGB565 Little-Endian binary
+- Use with `setSwapBytes(true)` in firmware
 
 ### 3. Integration
 ```cpp
 #include "sprites/fish_sprites.h"
 gfxDrawSpriteTransparent(sprite_fish_r_trout, x, y, width, height);
 ```
+
+---
 
 ## Memory Usage
 
@@ -124,69 +185,81 @@ gfxDrawSpriteTransparent(sprite_fish_r_trout, x, y, width, height);
 | **Total Flash** | **38.1%** (498KB / 1.3MB) | Good headroom |
 | **Total RAM** | **7.4%** (24KB / 327KB) | Excellent |
 
+---
+
 ## Performance
 
 - **FPS:** Stable 30 FPS with background + sprite fish
 - **Touch latency:** < 50ms
 - **Sprite rendering:** ~1ms per fish (pixel-by-pixel)
 
+---
+
 ## Issues Resolved
 
-### 1. Fish "Ghosty" Appearance
-**Problem:** Semi-transparent fish, visible box
-**Cause:** TFT_eSPI's transparent pushImage() unreliable
+### 1. Washed Out Sprite Colors (CRITICAL)
+**Problem:** Sprites appeared desaturated/muted  
+**Cause:** Default gamma curve incompatible with panel variant  
+**Fix:** Set Gamma 0x01 after `tft.init()`
+
+### 2. Display Static/Corruption
+**Problem:** Random pixels, shifted display  
+**Cause:** Using `ILI9341_DRIVER` instead of `ILI9341_2_DRIVER`  
+**Fix:** Changed to `ILI9341_2_DRIVER` in build flags
+
+### 3. Inverted Colors
+**Problem:** All colors appeared as opposites  
+**Cause:** `ILI9341_2_DRIVER` defaults to opposite inversion  
+**Fix:** Added `invertDisplay(true)` after init
+
+### 4. Red/Blue Swap
+**Problem:** Red appeared blue, blue appeared red  
+**Cause:** `TFT_RGB_ORDER=1` flag in build config  
+**Fix:** Removed flag, use default RGB order
+
+### 5. Fish "Ghosty" Appearance
+**Problem:** Semi-transparent fish, visible box  
+**Cause:** TFT_eSPI's transparent pushImage() unreliable  
 **Fix:** Manual pixel-by-pixel transparency check
 
-### 2. Fish Box When Facing Left
-**Problem:** Opaque rectangle when flipped
-**Cause:** Flip function not checking transparency
-**Fix:** Added transparency check to flip function
-
-### 3. Inverted UI Colors
-**Problem:** Text/buttons wrong colors, sprites correct
-**Cause:** `invertDisplay(false)` needed for sprites, inverts primitives
-**Fix:** Pre-inverted color constants in config.h
-
-### 4. Touch Inverted Up/Down
-**Problem:** Crosshairs on opposite vertical position
-**Cause:** Y-axis mapping backwards
+### 6. Touch Inverted Up/Down
+**Problem:** Crosshairs on opposite vertical position  
+**Cause:** Y-axis mapping backwards  
 **Fix:** Swapped TOUCH_MIN_Y and TOUCH_MAX_Y in map()
 
-### 5. Touch Inverted Left/Right (Initially)
-**Problem:** Crosshairs on opposite horizontal position
-**Cause:** X-axis not inverted
-**Fix:** Changed map() to use TOUCH_MAX_X → TOUCH_MIN_X
+---
 
 ## Next Steps (Phase 2B)
 
-1. **Convert remaining fish sprites** (9 more species)
-2. **Add UI sprites** (coin, pellet already resized)
-3. **Ty Knotts dialogue system**
-4. **Species-specific sprite rendering**
+1. **Update graphics.cpp** with gamma setting
+2. **Regenerate all sprite assets** using verified RGB565 pipeline
+3. **Convert remaining fish sprites** (9 more species)
+4. **Add UI sprites** (coin, pellet already resized)
+5. **Ty Knotts dialogue system**
+
+---
 
 ## Lessons Learned
 
-1. **Display inversion is finicky** - Sprites and primitives behave differently
-2. **Touch rotation ≠ display rotation** - Need independent calibration
-3. **Manual transparency more reliable** - Hardware acceleration inconsistent
+1. **Gamma is critical** - Default gamma causes washed-out sprites
+2. **Driver variant matters** - ILI9341_2_DRIVER fixes static but changes defaults
+3. **Test on hardware early** - Simulators don't catch gamma/color issues
 4. **Document everything** - Small config changes have big impacts
-5. **Test on hardware early** - Simulators don't catch display quirks
+5. **RGB order is hardware-specific** - Don't assume TFT_RGB_ORDER is needed
 
-## Files Modified
-
-- `config.h` - Inverted color constants + documentation
-- `graphics.cpp` - Display config documentation + sprite rendering
-- `touch.cpp` - Calibration values + mapping documentation
-- `docs/HARDWARE.md` - Added verified configuration section
-- `tools/resize_sprites.py` - Batch sprite resizing (auto-crop feature)
-- `include/sprites/*` - New sprite header structure
+---
 
 ## Configuration Summary (Copy-Paste Reference)
 
 ```cpp
 // Display (graphics.cpp)
-#define DISPLAY_INVERT false
-tft.setRotation(0);
+void gfxInit() {
+    tft.init();
+    tft.writecommand(0x26); tft.writedata(0x01);  // Gamma 0x01
+    tft.invertDisplay(true);                       // Required for _2_DRIVER
+    tft.setRotation(1);                            // Landscape, USB down
+    tft.setSwapBytes(true);                        // Required for RGB565
+}
 
 // Touch (touch.cpp)
 touch.setRotation(1);
@@ -194,16 +267,12 @@ touch.setRotation(1);
 #define TOUCH_MAX_X  3600
 #define TOUCH_MIN_Y  500
 #define TOUCH_MAX_Y  3600
-int16_t mappedX = map(p.x, 3600, 600, 0, 240);   // Inverted
-int16_t mappedY = map(p.y, 500, 3600, 0, 320);   // Normal
-
-// Colors (config.h) - All inverted via XOR 0xFFFF
-#define COLOR_BLACK  0xFFFF
-#define COLOR_WHITE  0x0000
+int16_t mappedX = map(p.x, 3600, 600, 0, 320);   // Inverted
+int16_t mappedY = map(p.y, 500, 3600, 0, 240);   // Normal
 ```
 
 ---
 
-**Status:** Ready for Phase 2B (remaining sprites + dialogue system)
-**Hardware:** Fully calibrated and documented
+**Status:** Ready for Phase 2B (remaining sprites + dialogue system)  
+**Hardware:** Fully calibrated and documented  
 **Performance:** Excellent (30 FPS, 38% flash, 7% RAM)

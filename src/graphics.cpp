@@ -4,9 +4,39 @@
 #include "coins.h"
 #include "game_state.h"
 #include "sprites/sprites.h"
+#include "sprites/test_colors.h"
 #include <TFT_eSPI.h>
 #include <math.h>
 #include <string.h>
+#include "sd_sprites.h"
+
+// Cached background tile from SD card
+static Sprite *bgTile = nullptr;
+
+// Cached Entity Sprites
+static Sprite *sprFish[FISH_SPECIES_COUNT];
+static Sprite *sprFood = nullptr;
+static Sprite *sprCoin = nullptr;
+
+void gfxLoadAssets()
+{
+#if USE_SPRITES
+    // Load Fish
+    sprFish[FISH_RAINBOW_TROUT] = spriteLoad("/sprites/fish/fish_r_trout.raw", 48, 20);
+    sprFish[FISH_BLUEGILL] = spriteLoad("/sprites/fish/fish_bluegill.raw", 48, 32);
+    sprFish[FISH_SMALLMOUTH_BASS] = spriteLoad("/sprites/fish/fish_smallmouth.raw", 48, 24);
+    sprFish[FISH_CHANNEL_CATFISH] = spriteLoad("/sprites/fish/fish_channel_cat.raw", 48, 18);
+    sprFish[FISH_LARGEMOUTH_BASS] = spriteLoad("/sprites/fish/fish_l_bass.raw", 48, 22);
+
+    // Load Items
+    sprFood = spriteLoad("/sprites/ui/ui_pellet.raw", 16, 16);
+    sprCoin = spriteLoad("/sprites/ui/ui_coin_gold.raw", 16, 16);
+
+#if DEBUG_SERIAL
+    Serial.println("Assets loaded from SD Card");
+#endif
+#endif
+}
 
 // ============================================================================
 // DISPLAY CONFIGURATION (TZT ESP32 CYD 2.4" - ILI9341)
@@ -34,13 +64,13 @@
 #define USE_SPRITES 1
 
 // Enable background sprite (set to 0 to use gradient)
-#define USE_BACKGROUND_SPRITE 1
+#define USE_BACKGROUND_SPRITE 0 // DISABLED for testing core sprites
 
 // Display color inversion - Try both true and false depending on your board
-#define DISPLAY_INVERT false
+#define DISPLAY_INVERT true
 
 // TFT display instance
-static TFT_eSPI tft = TFT_eSPI();
+TFT_eSPI tft = TFT_eSPI();
 
 // Sprite for double buffering (optional, uses more RAM)
 // static TFT_eSprite sprite = TFT_eSprite(&tft);
@@ -56,16 +86,23 @@ void gfxInit()
     // Initialize display
     tft.init();
 
-    // Portrait mode for CYD (Rotation 3 is often Portrait with USB down)
-    tft.setRotation(3);
-    
-    // CYD requires color inversion on some panels
-#if DISPLAY_INVERT
-    tft.invertDisplay(true); // ENABLED: Hardware test confirmed ST7789 needs this (2026-01-16)
-#endif
+    // Initial Rotation
+    tft.setRotation(1);
 
+    // VERIFIED SETTINGS from DEVLOG.md (2026-01-19):
+    // - invertDisplay(true) required with ILI9341_2_DRIVER
+    // - Gamma 0x01 CRITICAL for vibrant sprite colors
+    // - setSwapBytes(true) for RGB565 little-endian sprites
+    // FIXED: disable inversion (blue became yellow)
+    // FIXED: Restore Inversion (Verified Config used True)
+    tft.invertDisplay(true);
 
-    // Manual byte swapping is handled in gfxDrawSpriteTransparent() via drawPixel calls
+    // Gamma curve 0x01 - CRITICAL for sprite vibrancy
+    tft.writecommand(0x26); // Gamma Set
+    tft.writedata(0x01);    // Gamma Curve 1
+
+    // Enable byte swapping for sprites
+    tft.setSwapBytes(true);
 
     // Aggressive clear in ALL rotations to remove ghost images
     for (int r = 0; r < 4; r++)
@@ -74,12 +111,8 @@ void gfxInit()
         tft.fillScreen(TFT_BLACK);
     }
 
-    // Set final rotation
-    tft.setRotation(3);
-
-    // Enable byte swapping for PROGMEM sprites (RGB565 from PNG)
-    // This ensures pushImage handles byte order correctly for ILI9341
-    tft.setSwapBytes(true);
+    // Set final rotation (Landscape 320x240 - Matches Verified CYD Tester)
+    tft.setRotation(1);
 
 #if DEBUG_SERIAL
     Serial.println("=== DISPLAY INIT v2025.01.13.A ==="); // Unique identifier for THIS version
@@ -122,10 +155,41 @@ void gfxEndFrame()
 void gfxDrawTank()
 {
 #if USE_BACKGROUND_SPRITE
-    // Draw background sprite (240x240, fits tank area perfectly)
-    // Using delta - has clear blue sky, green vegetation, blue water
-    gfxDrawSprite(sprite_bg_delta, TANK_LEFT, TANK_TOP,
-                  SPRITE_BG_DELTA_WIDTH, SPRITE_BG_DELTA_HEIGHT);
+    // Ensure background tile is loaded
+    if (!bgTile)
+    {
+        bgTile = spriteLoad("/backgrounds/water.raw", 32, 32);
+    }
+
+    if (bgTile)
+    {
+        // Tiled background rendering (Option A)
+        for (int16_t y = TANK_TOP; y < TANK_BOTTOM; y += 32)
+        {
+            for (int16_t x = TANK_LEFT; x < TANK_RIGHT; x += 32)
+            {
+                // Calculate size to draw (clipping at edges)
+                int16_t drawW = (x + 32 > TANK_RIGHT) ? (TANK_RIGHT - x) : 32;
+                int16_t drawH = (y + 32 > TANK_BOTTOM) ? (TANK_BOTTOM - y) : 32;
+
+                if (drawW == 32 && drawH == 32)
+                {
+                    spriteDraw(bgTile, x, y);
+                }
+                else
+                {
+                    // Manual clip for edges (though pushImage handles it, let's be clean)
+                    tft.setSwapBytes(true);
+                    tft.pushImage(x, y, drawW, drawH, bgTile->data);
+                }
+            }
+        }
+    }
+    else
+    {
+        // Fallback to solid color if SD load fails
+        tft.fillRect(TANK_LEFT, TANK_TOP, TANK_WIDTH, TANK_HEIGHT, COLOR_WATER_MID);
+    }
 #else
     // Draw water gradient (simplified - just solid colors for Phase 1)
     // Top of tank - lighter blue
@@ -147,85 +211,82 @@ void gfxDrawFish(Fish *fish)
 
 #if USE_SPRITES
     // Sprite-based rendering
-    // Sprite-based rendering
-    const uint16_t *sprite = sprite_fish_r_trout;
-    int16_t spriteW = SPRITE_FISH_R_TROUT_WIDTH;
-    int16_t spriteH = SPRITE_FISH_R_TROUT_HEIGHT;
-
-    // Calculate position (center sprite on fish position)
-    int16_t x = (int16_t)fish->x - spriteW / 2;
-    int16_t y = (int16_t)fish->y - spriteH / 2;
-
-    // Draw with transparency, flip if facing right (source sprite faces left)
-    if (fish->facingRight)
+    Sprite *sprite = sprFish[fish->species];
+    if (sprite)
     {
-        gfxDrawSpriteTransparentFlip(sprite, x, y, spriteW, spriteH);
-    }
-    else
-    {
-        gfxDrawSpriteTransparent(sprite, x, y, spriteW, spriteH);
-    }
+        // Calculate position (center sprite on fish position)
+        int16_t x = (int16_t)fish->x - sprite->width / 2;
+        int16_t y = (int16_t)fish->y - sprite->height / 2;
 
-    // Hunger indicator (red outline when hungry)
-    if (fishIsHungry(fish))
-    {
-        tft.drawRect(x - 1, y - 1, spriteW + 2, spriteH + 2, COLOR_UI_RED);
-    }
+        // Draw with transparency
+        if (fish->facingRight)
+            spriteDrawTransparentFlip(sprite, x, y);
+        else
+            spriteDrawTransparent(sprite, x, y);
 
-#else
-    // Legacy geometric rendering (fallback)
-    float scale = 1.0f + fish->growthStage * 0.3f;
-    int16_t w = (int16_t)(FISH_WIDTH * scale);
-    int16_t h = (int16_t)(FISH_HEIGHT * scale);
+        // Hunger indicator (red outline when hungry)
+        if (fishIsHungry(fish))
+            tft.drawRect(x - 1, y - 1, sprite->width + 2, sprite->height + 2, COLOR_UI_RED);
 
-    int16_t x = (int16_t)fish->x - w / 2;
-    int16_t y = (int16_t)fish->y - h / 2;
-
-    // Fish body color based on species
-    uint16_t bodyColor;
-    switch (fish->species)
-    {
-    case FISH_RAINBOW_TROUT:
-        bodyColor = tft.color565(200, 150, 150); // Pinkish
-        break;
-    case FISH_BLUEGILL:
-        bodyColor = tft.color565(100, 100, 200); // Blue
-        break;
-    case FISH_SMALLMOUTH_BASS:
-        bodyColor = tft.color565(100, 150, 100); // Green
-        break;
-    case FISH_CHANNEL_CATFISH:
-        bodyColor = tft.color565(100, 80, 60); // Brown
-        break;
-    case FISH_LARGEMOUTH_BASS:
-        bodyColor = tft.color565(50, 120, 50); // Dark green
-        break;
-    default:
-        bodyColor = COLOR_WHITE;
-    }
-
-    // Simple fish shape (ellipse body + triangle tail)
-    tft.fillEllipse(fish->x, fish->y, w / 2, h / 2, bodyColor);
-
-    // Tail (triangle)
-    int16_t tailDir = fish->facingRight ? -1 : 1;
-    int16_t tailX = fish->x + tailDir * (w / 2);
-    tft.fillTriangle(
-        tailX, fish->y,
-        tailX + tailDir * (w / 3), fish->y - h / 3,
-        tailX + tailDir * (w / 3), fish->y + h / 3,
-        bodyColor);
-
-    // Eye
-    int16_t eyeX = fish->x + (fish->facingRight ? w / 4 : -w / 4);
-    tft.fillCircle(eyeX, fish->y - h / 6, 2, COLOR_BLACK);
-
-    // Hunger indicator (red tint when hungry)
-    if (fishIsHungry(fish))
-    {
-        tft.drawEllipse(fish->x, fish->y, w / 2 + 1, h / 2 + 1, COLOR_UI_RED);
+        return; // Successfully drew sprite
     }
 #endif
+
+    // Fallback: Geometric Rendering (Always compiled, reachable if USE_SPRITES=0 or sprite is null)
+    {
+        // Legacy geometric rendering (fallback)
+        float scale = 1.0f + fish->growthStage * 0.3f;
+        int16_t w = (int16_t)(FISH_WIDTH * scale);
+        int16_t h = (int16_t)(FISH_HEIGHT * scale);
+
+        int16_t x = (int16_t)fish->x - w / 2;
+        int16_t y = (int16_t)fish->y - h / 2;
+
+        // Fish body color based on species
+        uint16_t bodyColor;
+        switch (fish->species)
+        {
+        case FISH_RAINBOW_TROUT:
+            bodyColor = tft.color565(200, 150, 150); // Pinkish
+            break;
+        case FISH_BLUEGILL:
+            bodyColor = tft.color565(100, 100, 200); // Blue
+            break;
+        case FISH_SMALLMOUTH_BASS:
+            bodyColor = tft.color565(100, 150, 100); // Green
+            break;
+        case FISH_CHANNEL_CATFISH:
+            bodyColor = tft.color565(100, 80, 60); // Brown
+            break;
+        case FISH_LARGEMOUTH_BASS:
+            bodyColor = tft.color565(50, 120, 50); // Dark green
+            break;
+        default:
+            bodyColor = COLOR_WHITE;
+        }
+
+        // Simple fish shape (ellipse body + triangle tail)
+        tft.fillEllipse(fish->x, fish->y, w / 2, h / 2, bodyColor);
+
+        // Tail (triangle)
+        int16_t tailDir = fish->facingRight ? -1 : 1;
+        int16_t tailX = fish->x + tailDir * (w / 2);
+        tft.fillTriangle(
+            tailX, fish->y,
+            tailX + tailDir * (w / 3), fish->y - h / 3,
+            tailX + tailDir * (w / 3), fish->y + h / 3,
+            bodyColor);
+
+        // Eye
+        int16_t eyeX = fish->x + (fish->facingRight ? w / 4 : -w / 4);
+        tft.fillCircle(eyeX, fish->y - h / 6, 2, COLOR_BLACK);
+
+        // Hunger indicator (red tint when hungry)
+        if (fishIsHungry(fish))
+        {
+            tft.drawEllipse(fish->x, fish->y, w / 2 + 1, h / 2 + 1, COLOR_UI_RED);
+        }
+    }
 }
 
 void gfxDrawAllFish()
@@ -237,40 +298,111 @@ void gfxDrawAllFish()
 }
 
 // Restore background at specific area (dirty rect)
-void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h) {
+void gfxRestoreBackground(int16_t x, int16_t y, int16_t w, int16_t h)
+{
 #if USE_BACKGROUND_SPRITE
+    if (!bgTile)
+        return;
+
     // Clip to tank area
-    if (x < TANK_LEFT) { w -= (TANK_LEFT - x); x = TANK_LEFT; }
-    if (y < TANK_TOP) { h -= (TANK_TOP - y); y = TANK_TOP; }
-    
-    // Bounds check
-    if (w <= 0 || h <= 0) return;
-    
-    // Calculate offsets into background sprite
-    int16_t bgX = x - TANK_LEFT;
-    int16_t bgY = y - TANK_TOP;
-    
-    // Bounds check for sprite source
-    if (bgX + w > SPRITE_BG_DELTA_WIDTH) w = SPRITE_BG_DELTA_WIDTH - bgX;
-    if (bgY + h > SPRITE_BG_DELTA_HEIGHT) h = SPRITE_BG_DELTA_HEIGHT - bgY;
+    if (x < TANK_LEFT)
+    {
+        w -= (TANK_LEFT - x);
+        x = TANK_LEFT;
+    }
+    if (y < TANK_TOP)
+    {
+        h -= (TANK_TOP - y);
+        y = TANK_TOP;
+    }
+    if (x + w > TANK_RIGHT)
+        w = TANK_RIGHT - x;
+    if (y + h > TANK_BOTTOM)
+        h = TANK_BOTTOM - y;
 
-    if (w <= 0 || h <= 0) return;
+    if (w <= 0 || h <= 0)
+        return;
 
-    // Draw background chunk line-by-line
-    // We cannot push a rect from the large sprite directly as it's not contiguous
-    for (int16_t row = 0; row < h; row++) {
-        int32_t offset = (bgY + row) * SPRITE_BG_DELTA_WIDTH + bgX;
-        tft.pushImage(x, y + row, w, 1, &sprite_bg_delta[offset]);
+    // Tiled restoration
+    tft.setSwapBytes(true);
+    for (int16_t py = 0; py < h; py++)
+    {
+        int16_t screenY = y + py;
+        int16_t tileY = (screenY - TANK_TOP) % 32;
+        if (tileY < 0)
+            tileY += 32;
+
+        int16_t currentX = x;
+        int16_t remainingW = w;
+
+        while (remainingW > 0)
+        {
+            int16_t tileX = (currentX - TANK_LEFT) % 32;
+            if (tileX < 0)
+                tileX += 32;
+
+            int16_t segmentW = 32 - tileX;
+            if (segmentW > remainingW)
+                segmentW = remainingW;
+
+            tft.pushImage(currentX, screenY, segmentW, 1, &bgTile->data[tileY * 32 + tileX]);
+
+            currentX += segmentW;
+            remainingW -= segmentW;
+        }
     }
 #else
-    // Fallback: fill rect with blue
-    tft.fillRect(x, y, w, h, COLOR_WATER_MID);
+    // Fallback: fill rect with gradient zones to match gfxDrawTank (3 zones + sand)
+    // Zones match gfxDrawTank exactly:
+    // 1. Light: 0 to H/3
+    // 2. Mid:   H/3 to 2H/3
+    // 3. Deep:  2H/3 to BOTTOM
+
+    int16_t sandY = TANK_BOTTOM - 10;
+    int16_t midY = TANK_TOP + (TANK_HEIGHT / 3);
+    int16_t deepY = TANK_TOP + (TANK_HEIGHT * 2 / 3);
+
+    // 1. Light Water (Top)
+    if (y < midY)
+    {
+        int16_t h_light = (int16_t)min((long)(midY - y), (long)h);
+        tft.fillRect(x, y, w, h_light, COLOR_WATER_LIGHT);
+    }
+
+    // 2. Mid Water (Middle)
+    if (y + h > midY && y < deepY)
+    {
+        int16_t y_start = max(y, midY);
+        int16_t y_end = min((int16_t)(y + h), deepY);
+        if (y_end > y_start)
+            tft.fillRect(x, y_start, w, y_end - y_start, COLOR_WATER_MID);
+    }
+
+    // 3. Deep Water (Bottom)
+    if (y + h > deepY && y < sandY)
+    {
+        int16_t y_start = max(y, deepY);
+        int16_t y_end = min((int16_t)(y + h), sandY);
+        if (y_end > y_start)
+            tft.fillRect(x, y_start, w, y_end - y_start, COLOR_WATER_DEEP);
+    }
+
+    // 4. Sand (Bottom)
+    if (y + h > sandY)
+    {
+        int16_t y_start = max(y, sandY);
+        int16_t h_sand = (y + h) - y_start;
+        if (h_sand > 0)
+            tft.fillRect(x, y_start, w, h_sand, COLOR_SAND);
+    }
 #endif
 }
 
 // Clear a fish by redrawing the background behind it
-void gfxClearFish(Fish* fish) {
-    if (!fish || !fish->active) return;
+void gfxClearFish(Fish *fish)
+{
+    if (!fish || !fish->active)
+        return;
 
     int16_t spriteW, spriteH;
 
@@ -291,8 +423,10 @@ void gfxClearFish(Fish* fish) {
     gfxRestoreBackground(x - 2, y - 2, spriteW + 4, spriteH + 4);
 }
 
-void gfxClearAllFish() {
-    for (int i = 0; i < MAX_FISH; i++) {
+void gfxClearAllFish()
+{
+    for (int i = 0; i < MAX_FISH; i++)
+    {
         gfxClearFish(&fishPool[i]);
     }
 }
@@ -302,16 +436,36 @@ void gfxDrawFood(Food *food)
     if (!food || !food->active)
         return;
 
+#if USE_SPRITES
+    if (sprFood)
+    {
+        int16_t x = (int16_t)food->x - sprFood->width / 2;
+        int16_t y = (int16_t)food->y - sprFood->height / 2;
+        spriteDrawTransparent(sprFood, x, y);
+    }
+    else
+    {
+        // Fallback
+        tft.fillCircle((int16_t)food->x, (int16_t)food->y, FOOD_SIZE, COLOR_FOOD_BROWN);
+    }
+#else
     // Simple brown circle for food pellet
     tft.fillCircle((int16_t)food->x, (int16_t)food->y, FOOD_SIZE, COLOR_FOOD_BROWN);
+#endif
 }
 
-void gfxClearFood(Food* food) {
-    if (!food || !food->active) return;
-    
+void gfxClearFood(Food *food)
+{
+    if (!food || !food->active)
+        return;
+
     // Clear rect around circle
     int16_t r = FOOD_SIZE + 2; // Padding
-    gfxRestoreBackground((int16_t)food->x - r, (int16_t)food->y - r, r*2, r*2);
+#if USE_SPRITES
+    if (sprFood)
+        r = sprFood->width / 2 + 2;
+#endif
+    gfxRestoreBackground((int16_t)food->x - r, (int16_t)food->y - r, r * 2, r * 2);
 }
 
 void gfxDrawAllFood()
@@ -322,8 +476,10 @@ void gfxDrawAllFood()
     }
 }
 
-void gfxClearAllFood() {
-    for (int i = 0; i < MAX_FOOD; i++) {
+void gfxClearAllFood()
+{
+    for (int i = 0; i < MAX_FOOD; i++)
+    {
         gfxClearFood(&foodPool[i]);
     }
 }
@@ -335,6 +491,18 @@ void gfxDrawCoin(Coin *coin)
 
     // Bob animation
     float displayX = coin->x + sinf(coin->floatOffset) * 3;
+
+#if USE_SPRITES
+    if (sprCoin)
+    {
+        // Determine offset for bobbing
+        int16_t x = (int16_t)displayX - sprCoin->width / 2;
+        int16_t y = (int16_t)coin->y - sprCoin->height / 2;
+        spriteDrawTransparent(sprCoin, x, y);
+        return;
+    }
+    // Fallthrough to legacy
+#endif
 
     // Coin size based on value
     int16_t size = COIN_SIZE + (coin->value > 3 ? 2 : 0);
@@ -361,17 +529,25 @@ void gfxDrawAllCoins()
     }
 }
 
-void gfxClearCoin(Coin* coin) {
-    if (!coin || !coin->active) return;
-    
+void gfxClearCoin(Coin *coin)
+{
+    if (!coin || !coin->active)
+        return;
+
     // Coins animate (bob left/right) and have variable size
     // Max size is roughly 10px radius + 3px bob + padding
-    int16_t r = 16; 
-    gfxRestoreBackground((int16_t)coin->x - r, (int16_t)coin->y - r, r*2, r*2);
+    int16_t r = 16;
+#if USE_SPRITES
+    if (sprCoin)
+        r = sprCoin->width / 2 + 5; // Extra padding for bob
+#endif
+    gfxRestoreBackground((int16_t)coin->x - r, (int16_t)coin->y - r, r * 2, r * 2);
 }
 
-void gfxClearAllCoins() {
-    for (int i = 0; i < MAX_COINS; i++) {
+void gfxClearAllCoins()
+{
+    for (int i = 0; i < MAX_COINS; i++)
+    {
         gfxClearCoin(&coinPool[i]);
     }
 }
@@ -433,8 +609,10 @@ void gfxDrawFPS(uint16_t fps)
 }
 
 // DEBUG: Draw touch crosshair
-void gfxDrawTouchDebug(int16_t x, int16_t y) {
-    if (x < 0 || y < 0) return;
+void gfxDrawTouchDebug(int16_t x, int16_t y)
+{
+    if (x < 0 || y < 0)
+        return;
 
     // Draw crosshair
     tft.drawLine(x - 10, y, x + 10, y, COLOR_UI_RED);
@@ -502,13 +680,16 @@ void gfxDrawSpriteTransparent(const uint16_t *sprite, int16_t x, int16_t y,
                               int16_t width, int16_t height)
 {
     // Pixel-by-pixel with transparency check (no XOR needed with TFT_INVERSION_ON)
-    for (int16_t py = 0; py < height; py++) {
-        for (int16_t px = 0; px < width; px++) {
+    for (int16_t py = 0; py < height; py++)
+    {
+        for (int16_t px = 0; px < width; px++)
+        {
             uint16_t pixel = pgm_read_word(&sprite[py * width + px]);
-            if (pixel != SPRITE_TRANSPARENT_COLOR) {
-                // With setSwapBytes(true) enabled globally, drawPixel needs the raw value
-                // The library handles byte order internally
-                tft.drawPixel(x + px, y + py, pixel);
+            if (pixel != SPRITE_TRANSPARENT_COLOR)
+            {
+                // Manual byte swap needed for drawPixel because setSwapBytes only affects pushImage
+                // This is critical for ILI9341_DRIVER to avoid "washed out" colors
+                tft.drawPixel(x + px, y + py, (pixel >> 8) | (pixel << 8));
             }
         }
     }
@@ -518,12 +699,15 @@ void gfxDrawSpriteTransparentFlip(const uint16_t *sprite, int16_t x, int16_t y,
                                   int16_t width, int16_t height)
 {
     // Horizontally flipped with transparency (no XOR needed with TFT_INVERSION_ON)
-    for (int16_t py = 0; py < height; py++) {
-        for (int16_t px = 0; px < width; px++) {
+    for (int16_t py = 0; py < height; py++)
+    {
+        for (int16_t px = 0; px < width; px++)
+        {
             uint16_t pixel = pgm_read_word(&sprite[py * width + (width - 1 - px)]);
-            if (pixel != SPRITE_TRANSPARENT_COLOR) {
-                // With setSwapBytes(true) enabled globally, drawPixel needs the raw value
-                tft.drawPixel(x + px, y + py, pixel);
+            if (pixel != SPRITE_TRANSPARENT_COLOR)
+            {
+                // Manual byte swap needed for drawPixel
+                tft.drawPixel(x + px, y + py, (pixel >> 8) | (pixel << 8));
             }
         }
     }
@@ -533,7 +717,8 @@ void gfxDrawSpriteTransparentFlip(const uint16_t *sprite, int16_t x, int16_t y,
 // COLOR TEST
 // ============================================================================
 
-void gfxDrawColorTest() {
+void gfxDrawColorTest()
+{
     tft.fillScreen(COLOR_BLACK);
 
     // Draw labels
@@ -547,7 +732,7 @@ void gfxDrawColorTest() {
     yPos += 30;
 
     // REFERENCE (fillRect - known good)
-    tft.setCursor(5, yPos); 
+    tft.setCursor(5, yPos);
     tft.print("Ref (fillRect):");
     yPos += 20;
     // Draw 10px wide blocks to match 50x50 sprite columns
@@ -556,37 +741,35 @@ void gfxDrawColorTest() {
     tft.fillRect(30, yPos, 10, 50, 0x001F); // Blue
     tft.fillRect(40, yPos, 10, 50, 0xFFFF); // White
     tft.fillRect(50, yPos, 10, 50, 0x0000); // Black (Invisible on black bg, but consistent)
-    
+
     // Draw outline around reference
-    tft.drawRect(9, yPos-1, 52, 52, COLOR_WHITE);
-    
+    tft.drawRect(9, yPos - 1, 52, 52, COLOR_WHITE);
+
     yPos += 60;
 
     // TEST (pushImage - what we are testing)
     tft.setCursor(5, yPos);
     tft.print("Test (pushImage):");
     yPos += 20;
-    
-    /* DISABLED: test_colors sprite not available
+
     // IMPORTANT: Enable byte swapping for PROGMEM images
     // This solves the issue where colors are garbled (endian mismatch)
-    tft.setSwapBytes(true); 
-    
+    tft.setSwapBytes(true);
+
     // Push the 50x50 sprite directly
-    tft.pushImage(10, yPos, 
-                  SPRITE_TEST_COLORS_WIDTH, 
-                  SPRITE_TEST_COLORS_HEIGHT, 
+    tft.pushImage(10, yPos,
+                  SPRITE_TEST_COLORS_WIDTH,
+                  SPRITE_TEST_COLORS_HEIGHT,
                   sprite_test_colors);
-                  
+
     // Reset swap bytes to default just in case (though we likely want it true everywhere)
-    // tft.setSwapBytes(false); 
+    // tft.setSwapBytes(false);
 
     // Draw outline around test
-    tft.drawRect(9, yPos-1, 52, 52, COLOR_WHITE);
-    */
-    
+    tft.drawRect(9, yPos - 1, 52, 52, COLOR_WHITE);
+
     yPos += 60;
-    
+
     // Legend
     tft.setTextSize(1);
     tft.setCursor(5, yPos);

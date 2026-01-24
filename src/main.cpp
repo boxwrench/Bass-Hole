@@ -21,6 +21,7 @@
 #include "graphics.h"
 #include "sdcard.h"
 #include "touch.h"
+#include "sd_sprites.h"
 #include <Arduino.h>
 
 // Forward declarations for ESP-IDF/C++ strictness
@@ -44,7 +45,8 @@ uint16_t currentFPS = 0;
 // SETUP
 // ============================================================================
 
-void setup() {
+void setup()
+{
 #if DEBUG_SERIAL
   Serial.begin(115200);
   delay(100);
@@ -72,14 +74,22 @@ void setup() {
   gfxDrawText("BASS HOLE", 60, 140, COLOR_WHITE, 3);
   gfxDrawText("Loading...", 80, 180, COLOR_WATER_LIGHT, 1);
 
-  // Initialize SD card
+  // Initialize SD card FIRST (before loading assets!)
   bool sdOk = sdInit();
-  if (sdOk) {
+  spriteInit();
+
+  if (sdOk)
+  {
     gfxDrawText("SD Card OK", 80, 200, COLOR_UI_GREEN, 1);
-  } else {
+
+    // Load game assets NOW that SD is ready
+    gfxLoadAssets();
+  }
+  else
+  {
     gfxDrawText("No SD Card", 80, 200, COLOR_UI_RED, 1);
   }
-  delay(500);
+  delay(1000);
 
   // Confirm touch initialized
   gfxDrawText("Touch OK", 80, 220, COLOR_UI_GREEN, 1);
@@ -111,12 +121,14 @@ void setup() {
 // MAIN LOOP
 // ============================================================================
 
-void loop() {
+void loop()
+{
   unsigned long now = millis();
   unsigned long deltaTime = now - lastFrameTime;
 
   // Frame rate limiting
-  if (deltaTime < FRAME_TIME_MS) {
+  if (deltaTime < FRAME_TIME_MS)
+  {
     delay(FRAME_TIME_MS - deltaTime);
     now = millis();
     deltaTime = now - lastFrameTime;
@@ -132,15 +144,17 @@ void loop() {
 
   // State transition logic (detect entry to PLAYING)
   static GameState lastState = STATE_BOOT;
-  if (game.state == STATE_PLAYING && lastState != STATE_PLAYING) {
-      // Draw full background ONCE when entering playing state
-      // (Also catches resume from pause)
-      gfxDrawTank();
+  if (game.state == STATE_PLAYING && lastState != STATE_PLAYING)
+  {
+    // Draw full background ONCE when entering playing state
+    // (Also catches resume from pause)
+    gfxDrawTank();
   }
   lastState = game.state;
 
   // Update game entities
-  if (game.state == STATE_PLAYING && !game.isPaused) {
+  if (game.state == STATE_PLAYING && !game.isPaused)
+  {
     // DIRTY RECT RENDERING:
     // 1. Clear OLD positions (restore background)
     gfxClearAllFish();
@@ -152,7 +166,8 @@ void loop() {
     coinsUpdate(deltaTime);
 
     // Check for game over (all fish dead)
-    if (fishGetCount() == 0 && game.coins < FISH_COST_BASIC) {
+    if (fishGetCount() == 0 && game.coins < FISH_COST_BASIC)
+    {
       gameStateChange(STATE_GAMEOVER);
     }
   }
@@ -162,7 +177,8 @@ void loop() {
 
   // FPS calculation
   frameCount++;
-  if (now - fpsTimer >= 1000) {
+  if (now - fpsTimer >= 1000)
+  {
     currentFPS = frameCount;
     frameCount = 0;
     fpsTimer = now;
@@ -184,7 +200,8 @@ void loop() {
 // INPUT HANDLING
 // ============================================================================
 
-void handleInput() {
+void handleInput()
+{
   if (!touchTapped())
     return;
 
@@ -192,7 +209,11 @@ void handleInput() {
   if (!tap.valid)
     return;
 
-  switch (game.state) {
+  // VISUAL DEBUG: Draw circle where tap occurred
+  tft.fillCircle(tap.x, tap.y, 4, TFT_WHITE);
+
+  switch (game.state)
+  {
   case STATE_PLAYING:
     handlePlayingInput(tap);
     break;
@@ -211,10 +232,12 @@ void handleInput() {
   }
 }
 
-void handlePlayingInput(TouchPoint tap) {
+void handlePlayingInput(TouchPoint tap)
+{
   // First, try to collect coins at tap location
   uint8_t collected = coinCollect(tap.x, tap.y);
-  if (collected > 0) {
+  if (collected > 0)
+  {
 #if DEBUG_SERIAL
     Serial.print("Collected $");
     Serial.println(collected);
@@ -223,10 +246,12 @@ void handlePlayingInput(TouchPoint tap) {
   }
 
   // Check if tap is in tank area
-  if (tap.y >= TANK_TOP && tap.y <= TANK_BOTTOM) {
+  if (tap.y >= TANK_TOP && tap.y <= TANK_BOTTOM)
+  {
     // Drop food at tap location
     Food *food = foodDrop(tap.x, tap.y);
-    if (food) {
+    if (food)
+    {
 #if DEBUG_SERIAL
       Serial.print("Dropped food at ");
       Serial.print(tap.x);
@@ -237,7 +262,8 @@ void handlePlayingInput(TouchPoint tap) {
   }
 
   // Check if tap is in bottom UI area (shop button area)
-  if (tap.y > TANK_BOTTOM) {
+  if (tap.y > TANK_BOTTOM)
+  {
     int16_t btnWidth = 100;
     int16_t btnHeight = 30;
     int16_t btnX = (SCREEN_WIDTH - btnWidth) / 2;
@@ -259,16 +285,31 @@ void handlePlayingInput(TouchPoint tap) {
 #endif
 
     if (tap.x >= btnX && tap.x <= btnX + btnWidth && tap.y >= btnY &&
-        tap.y <= btnY + btnHeight) {
+        tap.y <= btnY + btnHeight)
+    {
 
 #if DEBUG_SERIAL
       Serial.println("Buy button HIT!");
 #endif
 
-      if (game.coins >= FISH_COST_BASIC) {
+      if (game.coins >= FISH_COST_BASIC)
+      {
         game.coins -= FISH_COST_BASIC;
-        // Spawn a new fish at the top center of the tank
-        fishSpawn(FISH_RAINBOW_TROUT, SCREEN_WIDTH / 2, TANK_TOP + 20);
+
+        // Cycle through unlocked fish
+        static uint8_t nextFishToSpawn = 0;
+
+        // Simple loop to find next unlocked fish
+        // (For Phase 2 we unlocked all 0x1F so this just cycles 0-4)
+        nextFishToSpawn = (nextFishToSpawn + 1) % FISH_SPECIES_COUNT;
+
+        // Spawn the selected fish
+        fishSpawn((FishSpecies)nextFishToSpawn, SCREEN_WIDTH / 2, TANK_TOP + 20);
+
+#if DEBUG_SERIAL
+        Serial.print("Spawned Species ID: ");
+        Serial.println(nextFishToSpawn);
+#endif
 #if DEBUG_SERIAL
         Serial.print("Bought fish! Remaining coins: $");
         Serial.println(game.coins);
@@ -282,8 +323,10 @@ void handlePlayingInput(TouchPoint tap) {
 // RENDERING
 // ============================================================================
 
-void render() {
-  switch (game.state) {
+void render()
+{
+  switch (game.state)
+  {
   case STATE_PLAYING:
     renderPlaying();
     break;
@@ -306,9 +349,10 @@ void render() {
 #endif
 }
 
-void renderPlaying() {
+void renderPlaying()
+{
   // Background drawn via dirty rect restoration or state entry
-  // gfxDrawTank(); 
+  // gfxDrawTank();
 
   // Draw game entities (order matters for layering)
   gfxDrawAllFood();
@@ -318,22 +362,25 @@ void renderPlaying() {
   // Draw UI
   gfxDrawUI();
 
-  // DEBUG: Show last tap location
-  #if DEBUG_TOUCH
+// DEBUG: Show last tap location
+#if DEBUG_TOUCH
   static TouchPoint lastDebugTap = {0, 0, 0, false};
   static unsigned long lastDebugTime = 0;
-  if (touchTapped()) {
+  if (touchTapped())
+  {
     lastDebugTap = touchGetTap();
     lastDebugTime = millis();
   }
   // Show for 2 seconds
-  if (millis() - lastDebugTime < 2000 && lastDebugTap.valid) {
+  if (millis() - lastDebugTime < 2000 && lastDebugTap.valid)
+  {
     gfxDrawTouchDebug(lastDebugTap.x, lastDebugTap.y);
   }
-  #endif
+#endif
 }
 
-void renderGameOver() {
+void renderGameOver()
+{
   gfxClear(COLOR_BLACK);
 
   gfxDrawText("GAME OVER", 50, 100, COLOR_UI_RED, 3);
@@ -344,14 +391,16 @@ void renderGameOver() {
   snprintf(scoreText, sizeof(scoreText), "$%lu", game.coins);
   gfxDrawText(scoreText, 90, 180, COLOR_COIN_GOLD, 2);
 
-  if (game.coins >= game.highScore) {
+  if (game.coins >= game.highScore)
+  {
     gfxDrawText("NEW HIGH SCORE!", 50, 220, COLOR_UI_GREEN, 1);
   }
 
   gfxDrawText("Tap to restart", 65, 280, COLOR_WATER_LIGHT, 1);
 }
 
-void renderTitle() {
+void renderTitle()
+{
   gfxClear(COLOR_WATER_DEEP);
 
   gfxDrawText("BASS HOLE", 45, 80, COLOR_WHITE, 3);
